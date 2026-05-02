@@ -42,3 +42,31 @@ pub enum AgentEvent {
         summary_sha256: String,
     },
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn session_started_roundtrip() {
+        let e = AgentEvent::SessionStarted {
+            agent_id: "agent-1".into(),
+            model_id: "llama3.2:3b".into(),
+            session_id: "sess-1".into(),
+        };
+        let json = serde_json::to_string(&e).unwrap();
+        let back: AgentEvent = serde_json::from_str(&json).unwrap();
+        assert_eq!(e, back);
+    }
+
+    #[test]
+    fn tagged_representation_uses_type_and_payload() {
+        let e = AgentEvent::SessionEnded {
+            reason: "user_hangup".into(),
+            summary_sha256: "abc".into(),
+        };
+        let v: serde_json::Value = serde_json::to_value(&e).unwrap();
+        assert_eq!(v["type"], "SessionEnded");
+        assert_eq!(v["payload"]["reason"], "user_hangup");
+    }
+}

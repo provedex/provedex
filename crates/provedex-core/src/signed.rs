@@ -17,6 +17,9 @@ pub struct SignedEvent {
     pub signer_pubkey: String,
 }
 
+/// Serialize a JSON value with sorted object keys, no whitespace, and a fixed
+/// number/string representation. Required because the hash chain and signature
+/// must be reproducible from the stored event regardless of producer.
 pub fn canonical_json(value: &Value) -> Vec<u8> {
     let mut out = Vec::new();
     write_canonical(&mut out, value);
@@ -77,4 +80,38 @@ fn write_json_string(out: &mut Vec<u8>, s: &str) {
         }
     }
     out.push(b'"');
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn canonical_orders_object_keys() {
+        let a = json!({"b": 1, "a": 2, "c": [3, 2, 1]});
+        let b = json!({"c": [3, 2, 1], "a": 2, "b": 1});
+        assert_eq!(canonical_json(&a), canonical_json(&b));
+        assert_eq!(canonical_json(&a), br#"{"a":2,"b":1,"c":[3,2,1]}"#.to_vec());
+    }
+
+    #[test]
+    fn canonical_escapes_control_chars() {
+        let v = json!({"k": "line1\nline2\t\"end\""});
+        assert_eq!(
+            canonical_json(&v),
+            br#"{"k":"line1\nline2\t\"end\""}"#.to_vec()
+        );
+    }
+
+    #[test]
+    fn canonical_is_stable_across_roundtrip() {
+        let v = json!({
+            "session_id": "abc",
+            "events": [{"type": "x", "n": 1}, {"type": "y", "n": 2}]
+        });
+        let bytes = canonical_json(&v);
+        let parsed: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(canonical_json(&parsed), bytes);
+    }
 }
