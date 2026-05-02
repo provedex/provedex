@@ -1346,6 +1346,7 @@ dependencies = [
  "axum",
  "bytes",
  "chrono",
+ "clap",
  "futures",
  "hex",
  "hound",
