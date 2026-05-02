@@ -11,5 +11,5 @@ pub use keys::{
     default_data_dir, default_key_path, default_ledger_path, verify_signature, KeyError,
     SigningKeypair,
 };
-pub use ledger::Ledger;
+pub use ledger::{read_file, Ledger, LedgerError};
 pub use signed::{canonical_json, SignedEvent};
