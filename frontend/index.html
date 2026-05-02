@@ -3,53 +3,62 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Provedex - Cryptographic Evidence for AI Agents</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Provedex</title>
+    <link rel="preconnect" href="https://rsms.me/" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/web/jetbrains-mono.css"
+    />
     <link rel="stylesheet" href="/style.css" />
   </head>
-  <body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
-    <header class="border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-semibold tracking-tight">Provedex</h1>
-        <p class="text-xs text-slate-400 mt-0.5">Cryptographic evidence layer for regulated AI agents.</p>
+  <body>
+    <header class="hdr">
+      <div class="hdr-left">
+        <span class="brand">provedex</span>
+        <span class="hdr-sub">cryptographic evidence layer for regulated AI agents</span>
       </div>
-      <div id="session-info" class="text-xs text-slate-500 text-right font-mono"></div>
+      <div class="hdr-right mono">
+        <span id="session-id">session ----</span>
+        <span id="pubkey">pubkey ----</span>
+      </div>
     </header>
 
-    <main class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-6">
-      <section class="bg-slate-900 border border-slate-800 rounded-md flex flex-col h-[70vh]">
-        <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-          <h2 class="text-sm uppercase tracking-wider text-slate-400">Conversation</h2>
-          <span id="mic-status" class="text-xs text-slate-500">idle</span>
+    <main class="main">
+      <section class="pane pane-left">
+        <div class="pane-hdr">
+          <span class="pane-title">conversation</span>
+          <span id="mic-status" class="pane-meta mono">idle</span>
         </div>
-        <div id="conversation" class="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm"></div>
-        <div class="px-4 py-3 border-t border-slate-800 flex items-center gap-3">
-          <button
-            id="mic-btn"
-            class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-medium px-4 py-2 rounded-md transition"
-          >
-            Hold to talk
-          </button>
-          <span class="text-xs text-slate-500">Press and hold, release to send.</span>
+        <div id="conversation" class="conv"></div>
+        <div class="pane-foot">
+          <button id="mic-btn" class="btn btn-primary">hold to talk</button>
+          <span class="hint">press and hold, release to send</span>
         </div>
       </section>
 
-      <section class="bg-slate-900 border border-slate-800 rounded-md flex flex-col h-[70vh]">
-        <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-          <h2 class="text-sm uppercase tracking-wider text-slate-400">Signed event stream</h2>
-          <span id="event-count" class="text-xs text-slate-500 font-mono">0 events</span>
+      <section class="pane pane-right">
+        <div class="pane-hdr">
+          <span class="pane-title">signed event stream</span>
+          <span id="event-count" class="pane-meta mono">0 events</span>
         </div>
-        <div id="events" class="flex-1 overflow-y-auto px-2 py-2 space-y-1 font-mono text-xs"></div>
+        <div class="evt-cols mono">
+          <span class="col-seq">seq</span>
+          <span class="col-type">type</span>
+          <span class="col-hash">self_hash</span>
+          <span class="col-ts">timestamp</span>
+        </div>
+        <div id="events" class="evt-list mono"></div>
       </section>
     </main>
 
-    <footer class="px-6 pb-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-md p-4 flex flex-wrap items-center gap-3">
-        <button id="verify-btn" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-2 rounded-md text-sm">Verify chain</button>
-        <button id="tamper-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-md text-sm">Tamper test</button>
-        <button id="export-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-md text-sm">Export for regulator</button>
-        <div id="verify-result" class="ml-auto text-sm font-mono text-slate-400"></div>
+    <footer class="foot">
+      <div class="foot-left">
+        <button id="verify-btn" class="btn">verify chain</button>
+        <button id="tamper-btn" class="btn">tamper test</button>
+        <button id="export-btn" class="btn">export bundle</button>
       </div>
+      <div id="verify-result" class="foot-right mono">awaiting verify</div>
     </footer>
 
     <script src="/app.js"></script>

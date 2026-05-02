@@ -3,7 +3,8 @@ const eventsEl = document.getElementById('events');
 const eventCountEl = document.getElementById('event-count');
 const conversationEl = document.getElementById('conversation');
 const verifyResultEl = document.getElementById('verify-result');
-const sessionInfoEl = document.getElementById('session-info');
+const sessionIdEl = document.getElementById('session-id');
+const pubkeyEl = document.getElementById('pubkey');
 const micBtn = document.getElementById('mic-btn');
 const micStatus = document.getElementById('mic-status');
 
@@ -16,9 +17,11 @@ async function init() {
   try {
     const r = await fetch(`${API}/healthz`);
     const j = await r.json();
-    sessionInfoEl.textContent = `session ${j.session_id.slice(0, 8)}\npubkey ${j.pubkey.slice(0, 16)}...`;
+    sessionIdEl.textContent = `session ${j.session_id.slice(0, 8)}`;
+    pubkeyEl.textContent = `pubkey ${j.pubkey.slice(0, 16)}`;
   } catch (e) {
-    sessionInfoEl.textContent = 'server unreachable';
+    sessionIdEl.textContent = 'session offline';
+    pubkeyEl.textContent = '';
   }
   subscribeEvents();
   wireButtons();
@@ -36,20 +39,24 @@ function subscribeEvents() {
     }
   });
   es.onerror = () => {
-    setTimeout(subscribeEvents, 2000);
     es.close();
+    setTimeout(subscribeEvents, 2000);
   };
 }
 
 function addEventRow(evt) {
+  if (eventRowsBySeq.has(evt.seq)) return;
   const row = document.createElement('div');
-  row.className = 'event-row fresh';
+  row.className = 'evt-row';
   row.dataset.seq = evt.seq;
   const type = evt.event && evt.event.type ? evt.event.type : 'Unknown';
-  const shortHash = evt.self_hash ? evt.self_hash.slice(0, 12) : '';
-  row.innerHTML = `<span class="text-slate-500">seq=${String(evt.seq).padStart(3, '0')}</span> ` +
-    `<span class="event-type">${type}</span> ` +
-    `<span class="event-hash">${shortHash}</span>`;
+  const shortHash = evt.self_hash ? evt.self_hash.slice(0, 16) : '';
+  const ts = formatTs(evt.timestamp_nanos);
+  row.innerHTML =
+    `<span class="col-seq">${String(evt.seq).padStart(3, '0')}</span>` +
+    `<span class="col-type">${type}</span>` +
+    `<span class="col-hash">${shortHash}</span>` +
+    `<span class="col-ts">${ts}</span>`;
   eventsEl.appendChild(row);
   eventsEl.scrollTop = eventsEl.scrollHeight;
   eventRowsBySeq.set(evt.seq, row);
@@ -57,49 +64,56 @@ function addEventRow(evt) {
   eventCountEl.textContent = `${eventCount} events`;
 
   if (evt.event && evt.event.type === 'UtteranceCaptured' && evt.event.payload) {
-    addBubble('user', evt.event.payload.transcript || '');
+    addMessage('user', evt.event.payload.transcript || '');
   }
   if (evt.event && evt.event.type === 'UtteranceSpoken' && evt.event.payload) {
-    addBubble('agent', evt.event.payload.text || '');
+    addMessage('agent', evt.event.payload.text || '');
   }
 }
 
-function addBubble(role, text) {
+function formatTs(nanos) {
+  if (!nanos) return '';
+  const ms = Number(BigInt(nanos) / 1000000n);
+  const d = new Date(ms);
+  return d.toISOString().replace('T', ' ').replace('Z', '');
+}
+
+function addMessage(role, text) {
   if (!text) return;
-  const wrap = document.createElement('div');
-  wrap.className = 'flex flex-col';
-  const bubble = document.createElement('span');
-  bubble.className = `bubble ${role === 'user' ? 'bubble-user' : 'bubble-agent'}`;
-  bubble.textContent = text;
-  wrap.appendChild(bubble);
-  conversationEl.appendChild(wrap);
+  const row = document.createElement('div');
+  row.className = 'msg';
+  const r = document.createElement('span');
+  r.className = `msg-role ${role}`;
+  r.textContent = role === 'user' ? 'user' : 'agent';
+  const t = document.createElement('span');
+  t.className = 'msg-text';
+  t.textContent = text;
+  row.appendChild(r);
+  row.appendChild(t);
+  conversationEl.appendChild(row);
   conversationEl.scrollTop = conversationEl.scrollHeight;
 }
 
 function wireButtons() {
   document.getElementById('verify-btn').addEventListener('click', async () => {
-    verifyResultEl.textContent = 'verifying...';
-    verifyResultEl.className = 'ml-auto text-sm font-mono text-slate-400';
+    setVerifyResult('verifying', 'warn');
     try {
       const r = await fetch(`${API}/verify`, { method: 'POST' });
       const j = await r.json();
       renderVerifyResult(j);
     } catch (e) {
-      verifyResultEl.textContent = `error: ${e}`;
-      verifyResultEl.className = 'ml-auto text-sm font-mono text-red-400';
+      setVerifyResult(`error: ${e.message || e}`, 'fail');
     }
   });
   document.getElementById('tamper-btn').addEventListener('click', async () => {
-    if (!confirm('Tamper test will mutate one event in the local ledger so the chain visibly breaks. Continue?')) return;
+    if (!confirm('tamper-test will mutate one event in the local ledger so the chain visibly breaks. continue?')) return;
     try {
       const r = await fetch(`${API}/tamper-test`, { method: 'POST' });
       if (!r.ok) throw new Error(await r.text());
       const j = await r.json();
-      verifyResultEl.textContent = `tampered seq=${j.tampered_seq}; click Verify`;
-      verifyResultEl.className = 'ml-auto text-sm font-mono text-amber-400';
+      setVerifyResult(`tampered seq ${j.tampered_seq}; click verify`, 'warn');
     } catch (e) {
-      verifyResultEl.textContent = `tamper failed: ${e.message || e}`;
-      verifyResultEl.className = 'ml-auto text-sm font-mono text-red-400';
+      setVerifyResult(`tamper failed: ${e.message || e}`, 'fail');
     }
   });
   document.getElementById('export-btn').addEventListener('click', () => {
@@ -116,16 +130,25 @@ function wireButtons() {
   });
 }
 
+function setVerifyResult(text, state) {
+  verifyResultEl.textContent = text;
+  verifyResultEl.className = `foot-right mono ${state || ''}`;
+}
+
 function renderVerifyResult(report) {
   for (const row of eventRowsBySeq.values()) {
     row.classList.remove('broken');
   }
   if (report.status === 'valid') {
-    verifyResultEl.textContent = `valid - ${report.event_count} events - root ${report.root_hash.slice(0, 16)}...`;
-    verifyResultEl.className = 'ml-auto text-sm font-mono text-emerald-400';
+    setVerifyResult(
+      `valid - ${report.event_count} events - root ${report.root_hash.slice(0, 16)}`,
+      'pass',
+    );
   } else {
-    verifyResultEl.textContent = `BROKEN at seq ${report.broken_at_seq} - ${report.broken_reason || ''}`;
-    verifyResultEl.className = 'ml-auto text-sm font-mono text-red-400';
+    setVerifyResult(
+      `BROKEN at seq ${report.broken_at_seq} - ${report.broken_reason || ''}`,
+      'fail',
+    );
     const row = eventRowsBySeq.get(report.broken_at_seq);
     if (row) row.classList.add('broken');
   }
@@ -138,7 +161,10 @@ function wireMic() {
     return;
   }
   micBtn.addEventListener('mousedown', startRecording);
-  micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); });
+  micBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    startRecording();
+  });
   micBtn.addEventListener('mouseup', stopRecording);
   micBtn.addEventListener('mouseleave', stopRecording);
   micBtn.addEventListener('touchend', stopRecording);
@@ -150,12 +176,13 @@ async function startRecording() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream);
     chunks = [];
-    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
     mediaRecorder.onstop = handleRecordingStopped;
     mediaRecorder.start();
     micStatus.textContent = 'recording';
-    micBtn.classList.remove('bg-emerald-600');
-    micBtn.classList.add('bg-red-600');
+    micBtn.classList.add('recording');
   } catch (e) {
     micStatus.textContent = `mic error: ${e.message}`;
   }
@@ -165,8 +192,7 @@ function stopRecording() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
     micStatus.textContent = 'processing';
-    micBtn.classList.remove('bg-red-600');
-    micBtn.classList.add('bg-emerald-600');
+    micBtn.classList.remove('recording');
   }
 }
 
@@ -177,8 +203,7 @@ async function handleRecordingStopped() {
   try {
     const r = await fetch(`${API}/chat`, { method: 'POST', body: fd });
     if (!r.ok) {
-      const t = await r.text();
-      micStatus.textContent = `chat error: ${t}`;
+      micStatus.textContent = `chat error: ${await r.text()}`;
       return;
     }
     const j = await r.json();
