@@ -17,11 +17,11 @@ async function init() {
   try {
     const r = await fetch(`${API}/healthz`);
     const j = await r.json();
-    sessionIdEl.textContent = `session ${j.session_id.slice(0, 8)}`;
-    pubkeyEl.textContent = `pubkey ${j.pubkey.slice(0, 16)}`;
+    sessionIdEl.textContent = j.session_id.slice(0, 8);
+    pubkeyEl.textContent = j.pubkey.slice(0, 16);
   } catch (e) {
-    sessionIdEl.textContent = 'session offline';
-    pubkeyEl.textContent = '';
+    sessionIdEl.textContent = 'offline';
+    pubkeyEl.textContent = '----';
   }
   subscribeEvents();
   wireButtons();
@@ -61,7 +61,7 @@ function addEventRow(evt) {
   eventsEl.scrollTop = eventsEl.scrollHeight;
   eventRowsBySeq.set(evt.seq, row);
   eventCount += 1;
-  eventCountEl.textContent = `${eventCount} events`;
+  eventCountEl.textContent = `${eventCount} ${eventCount === 1 ? 'event' : 'events'}`;
 
   if (evt.event && evt.event.type === 'UtteranceCaptured' && evt.event.payload) {
     addMessage('user', evt.event.payload.transcript || '');
@@ -80,6 +80,8 @@ function formatTs(nanos) {
 
 function addMessage(role, text) {
   if (!text) return;
+  const empty = document.getElementById('conv-empty');
+  if (empty) empty.remove();
   const row = document.createElement('div');
   row.className = 'msg';
   const r = document.createElement('span');
@@ -141,14 +143,12 @@ function renderVerifyResult(report) {
   }
   if (report.status === 'valid') {
     setVerifyResult(
-      `valid - ${report.event_count} events - root ${report.root_hash.slice(0, 16)}`,
+      `chain valid - root ${report.root_hash.slice(0, 16)}`,
       'pass',
     );
   } else {
-    setVerifyResult(
-      `BROKEN at seq ${report.broken_at_seq} - ${report.broken_reason || ''}`,
-      'fail',
-    );
+    const seq = String(report.broken_at_seq).padStart(3, '0');
+    setVerifyResult(`chain broken at seq ${seq}`, 'fail');
     const row = eventRowsBySeq.get(report.broken_at_seq);
     if (row) row.classList.add('broken');
   }
@@ -168,6 +168,20 @@ function wireMic() {
   micBtn.addEventListener('mouseup', stopRecording);
   micBtn.addEventListener('mouseleave', stopRecording);
   micBtn.addEventListener('touchend', stopRecording);
+
+  // Push-to-talk: hold spacebar. Skip auto-repeat and any text input focus.
+  document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space' || e.repeat) return;
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+    startRecording();
+  });
+  document.addEventListener('keyup', (e) => {
+    if (e.code !== 'Space') return;
+    e.preventDefault();
+    stopRecording();
+  });
 }
 
 async function startRecording() {

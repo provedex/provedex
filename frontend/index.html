@@ -19,8 +19,8 @@
         <span class="hdr-sub">cryptographic evidence layer for regulated AI agents</span>
       </div>
       <div class="hdr-right mono">
-        <span id="session-id">session ----</span>
-        <span id="pubkey">pubkey ----</span>
+        <span class="hdr-pair"><span class="hdr-label">session:</span> <span id="session-id">----</span></span>
+        <span class="hdr-pair"><span class="hdr-label">pubkey:</span> <span id="pubkey">----</span></span>
       </div>
     </header>
 
@@ -30,10 +30,12 @@
           <span class="pane-title">conversation</span>
           <span id="mic-status" class="pane-meta mono">idle</span>
         </div>
-        <div id="conversation" class="conv"></div>
+        <div id="conversation" class="conv">
+          <div id="conv-empty" class="conv-empty">no transcript yet - hold mic or press space to start</div>
+        </div>
         <div class="pane-foot">
           <button id="mic-btn" class="btn btn-primary">hold to talk</button>
-          <span class="hint">press and hold, release to send</span>
+          <span class="hint">hold the button or press space</span>
         </div>
       </section>
 
@@ -58,7 +60,7 @@
         <button id="tamper-btn" class="btn">tamper test</button>
         <button id="export-btn" class="btn">export bundle</button>
       </div>
-      <div id="verify-result" class="foot-right mono">awaiting verify</div>
+      <div id="verify-result" class="foot-right mono"></div>
     </footer>
 
     <script src="/app.js"></script>
