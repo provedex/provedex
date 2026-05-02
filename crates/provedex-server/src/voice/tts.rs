@@ -17,7 +17,18 @@ pub fn locate_piper() -> Option<PathBuf> {
             return Some(p);
         }
     }
-    which::which("piper").ok()
+    if let Ok(p) = which::which("piper") {
+        return Some(p);
+    }
+    // Fall back to common install locations that may not be on the spawned
+    // process PATH (e.g. `pipx install piper-tts` puts it in ~/.local/bin).
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(home) = dirs::home_dir() {
+        candidates.push(home.join(".local").join("bin").join("piper"));
+    }
+    candidates.push(PathBuf::from("/usr/local/bin/piper"));
+    candidates.push(PathBuf::from("/opt/homebrew/bin/piper"));
+    candidates.into_iter().find(|p| p.is_file())
 }
 
 pub fn default_voice_path() -> PathBuf {
