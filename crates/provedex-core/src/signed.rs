@@ -1,10 +1,27 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
+use thiserror::Error;
 
 use crate::event::AgentEvent;
+use crate::keys::{verify_signature, KeyError, SigningKeypair};
 
 pub const GENESIS_PARENT_HASH: &str =
     "0000000000000000000000000000000000000000000000000000000000000000";
+
+#[derive(Debug, Error)]
+pub enum SignedError {
+    #[error("json: {0}")]
+    Json(#[from] serde_json::Error),
+    #[error("key: {0}")]
+    Key(#[from] KeyError),
+    #[error("self_hash mismatch")]
+    HashMismatch,
+    #[error("invalid hex: {0}")]
+    Hex(#[from] hex::FromHexError),
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct SignedEvent {
@@ -15,6 +32,75 @@ pub struct SignedEvent {
     pub self_hash: String,
     pub signature: String,
     pub signer_pubkey: String,
+}
+
+impl SignedEvent {
+    /// Build, hash, and sign a new event in one shot. The caller supplies the
+    /// previous event's `self_hash` (or `GENESIS_PARENT_HASH` for seq 0).
+    pub fn seal(
+        seq: u64,
+        event: AgentEvent,
+        parent_hash: &str,
+        keypair: &SigningKeypair,
+    ) -> Result<Self, SignedError> {
+        let timestamp_nanos = now_nanos();
+        let hash_bytes = compute_self_hash(seq, timestamp_nanos, &event, parent_hash)?;
+        let signature = keypair.sign(&hash_bytes);
+        Ok(Self {
+            seq,
+            timestamp_nanos,
+            event,
+            parent_hash: parent_hash.to_string(),
+            self_hash: hex::encode(hash_bytes),
+            signature: hex::encode(signature.to_bytes()),
+            signer_pubkey: keypair.pubkey_hex(),
+        })
+    }
+
+    /// Recompute the hash and verify both the hash and the signature against
+    /// the embedded public key. Does not check parent linkage; that lives in
+    /// `chain::verify_chain`.
+    pub fn verify_self(&self) -> Result<(), SignedError> {
+        let recomputed = compute_self_hash(
+            self.seq,
+            self.timestamp_nanos,
+            &self.event,
+            &self.parent_hash,
+        )?;
+        if hex::encode(recomputed) != self.self_hash {
+            return Err(SignedError::HashMismatch);
+        }
+        verify_signature(&self.signer_pubkey, &recomputed, &self.signature)?;
+        Ok(())
+    }
+}
+
+pub fn compute_self_hash(
+    seq: u64,
+    timestamp_nanos: u64,
+    event: &AgentEvent,
+    parent_hash: &str,
+) -> Result<[u8; 32], SignedError> {
+    let mut map = serde_json::Map::new();
+    map.insert("event".into(), serde_json::to_value(event)?);
+    map.insert("parent_hash".into(), Value::String(parent_hash.to_string()));
+    map.insert("seq".into(), Value::Number(seq.into()));
+    map.insert(
+        "timestamp_nanos".into(),
+        Value::Number(timestamp_nanos.into()),
+    );
+    let bytes = canonical_json(&Value::Object(map));
+    let digest = Sha256::digest(&bytes);
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&digest);
+    Ok(out)
+}
+
+fn now_nanos() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0)
 }
 
 /// Serialize a JSON value with sorted object keys, no whitespace, and a fixed
@@ -113,5 +199,33 @@ mod tests {
         let bytes = canonical_json(&v);
         let parsed: Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(canonical_json(&parsed), bytes);
+    }
+
+    #[test]
+    fn seal_and_verify_self() {
+        let kp = SigningKeypair::generate();
+        let evt = AgentEvent::SessionStarted {
+            agent_id: "a".into(),
+            model_id: "m".into(),
+            session_id: "s".into(),
+        };
+        let s = SignedEvent::seal(0, evt, GENESIS_PARENT_HASH, &kp).unwrap();
+        s.verify_self().unwrap();
+    }
+
+    #[test]
+    fn tampering_with_event_breaks_self_hash() {
+        let kp = SigningKeypair::generate();
+        let evt = AgentEvent::SessionStarted {
+            agent_id: "a".into(),
+            model_id: "m".into(),
+            session_id: "s".into(),
+        };
+        let mut s = SignedEvent::seal(0, evt, GENESIS_PARENT_HASH, &kp).unwrap();
+        s.event = AgentEvent::SessionEnded {
+            reason: "tampered".into(),
+            summary_sha256: "x".into(),
+        };
+        assert!(matches!(s.verify_self(), Err(SignedError::HashMismatch)));
     }
 }
