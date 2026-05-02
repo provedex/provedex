@@ -65,12 +65,21 @@ pub async fn synthesize(text: &str) -> Result<TtsResult> {
         });
     }
 
+    // Piper's --length_scale controls duration: < 1.0 speeds up, > 1.0 slows.
+    // Default 0.9 keeps speech intelligible while shaving demo runtime.
+    let length_scale = std::env::var("PROVEDEX_PIPER_LENGTH_SCALE")
+        .ok()
+        .filter(|s| s.parse::<f32>().is_ok())
+        .unwrap_or_else(|| "0.9".into());
+
     let mut child = Command::new(&piper)
         .args([
             "--model",
             voice.to_str().context("piper voice path is not utf-8")?,
             "--output_file",
             "-",
+            "--length_scale",
+            &length_scale,
         ])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
