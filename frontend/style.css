@@ -1,0 +1,42 @@
+.event-row {
+  border-left: 2px solid transparent;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.event-row.fresh {
+  background: rgba(16, 185, 129, 0.08);
+  border-left-color: rgb(16, 185, 129);
+  animation: fade 1.5s ease-out;
+}
+.event-row.broken {
+  background: rgba(239, 68, 68, 0.18);
+  border-left-color: rgb(239, 68, 68);
+}
+@keyframes fade {
+  from { background: rgba(16, 185, 129, 0.32); }
+  to { background: rgba(16, 185, 129, 0.08); }
+}
+.event-type {
+  color: rgb(125, 211, 252);
+}
+.event-hash {
+  color: rgb(148, 163, 184);
+}
+.bubble-user {
+  align-self: flex-end;
+  background: rgb(30, 64, 175);
+}
+.bubble-agent {
+  align-self: flex-start;
+  background: rgb(15, 118, 110);
+}
+.bubble {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 8px;
+  max-width: 90%;
+  word-break: break-word;
+}

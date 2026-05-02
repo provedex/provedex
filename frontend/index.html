@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Provedex - Cryptographic Evidence for AI Agents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+    <header class="border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-semibold tracking-tight">Provedex</h1>
+        <p class="text-xs text-slate-400 mt-0.5">Cryptographic evidence layer for regulated AI agents.</p>
+      </div>
+      <div id="session-info" class="text-xs text-slate-500 text-right font-mono"></div>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-6">
+      <section class="bg-slate-900 border border-slate-800 rounded-md flex flex-col h-[70vh]">
+        <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <h2 class="text-sm uppercase tracking-wider text-slate-400">Conversation</h2>
+          <span id="mic-status" class="text-xs text-slate-500">idle</span>
+        </div>
+        <div id="conversation" class="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm"></div>
+        <div class="px-4 py-3 border-t border-slate-800 flex items-center gap-3">
+          <button
+            id="mic-btn"
+            class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-medium px-4 py-2 rounded-md transition"
+          >
+            Hold to talk
+          </button>
+          <span class="text-xs text-slate-500">Press and hold, release to send.</span>
+        </div>
+      </section>
+
+      <section class="bg-slate-900 border border-slate-800 rounded-md flex flex-col h-[70vh]">
+        <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <h2 class="text-sm uppercase tracking-wider text-slate-400">Signed event stream</h2>
+          <span id="event-count" class="text-xs text-slate-500 font-mono">0 events</span>
+        </div>
+        <div id="events" class="flex-1 overflow-y-auto px-2 py-2 space-y-1 font-mono text-xs"></div>
+      </section>
+    </main>
+
+    <footer class="px-6 pb-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-md p-4 flex flex-wrap items-center gap-3">
+        <button id="verify-btn" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-2 rounded-md text-sm">Verify chain</button>
+        <button id="tamper-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-md text-sm">Tamper test</button>
+        <button id="export-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-md text-sm">Export for regulator</button>
+        <div id="verify-result" class="ml-auto text-sm font-mono text-slate-400"></div>
+      </div>
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
