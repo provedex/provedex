@@ -4,10 +4,16 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: -D warnings
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
 
 jobs:
   check:
@@ -16,18 +22,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install build dependencies for whisper.cpp
+      - name: install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake clang
 
-      - uses: dtolnay/rust-toolchain@1.89.0
+      # rust-toolchain.toml pins the version; rustup show installs it.
+      - name: install rust toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: install rustfmt + clippy
+        run: rustup component add rustfmt clippy
+
+      - name: cache cargo registry + target
+        uses: actions/cache@v4
         with:
-          components: rustfmt, clippy
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
-      - uses: Swatinem/rust-cache@v2
-
-      - name: cargo fmt --check
+      - name: cargo fmt
         run: cargo fmt --all -- --check
 
       - name: cargo clippy

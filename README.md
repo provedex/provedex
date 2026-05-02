@@ -1,5 +1,7 @@
 # Provedex
 
+[![ci](https://github.com/provedex/provedex/actions/workflows/ci.yml/badge.svg)](https://github.com/provedex/provedex/actions/workflows/ci.yml)
+
 **Cryptographic evidence layer for regulated AI agents.**
 
 When an AI agent makes a decision in healthcare, finance, legal, or any regulated environment, Provedex produces a tamper-evident, cryptographically signed record of exactly what happened: every tool call, every model output, every voice utterance. Regulators, auditors, and courts get a verifiable answer.
