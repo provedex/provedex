@@ -5,6 +5,7 @@ use std::sync::Mutex;
 
 use thiserror::Error;
 
+use crate::chain::{verify_chain, ChainReport};
 use crate::signed::SignedEvent;
 
 #[derive(Debug, Error)]
@@ -44,6 +45,26 @@ impl Ledger {
         &self.path
     }
 
+    /// Append a signed event to the ledger. The event is serialized as a single
+    /// JSON line and fsynced before this returns, so the write survives a
+    /// crash. Concurrent calls serialize through an internal mutex.
+    ///
+    /// ```
+    /// use provedex_core::{
+    ///     AgentEvent, Ledger, SignedEvent, SigningKeypair, GENESIS_PARENT_HASH,
+    /// };
+    /// let dir = tempfile::tempdir().unwrap();
+    /// let ledger = Ledger::open(dir.path().join("ledger.ndjson")).unwrap();
+    /// let kp = SigningKeypair::generate();
+    /// let evt = AgentEvent::SessionStarted {
+    ///     agent_id: "demo".into(),
+    ///     model_id: "llama3.2:3b".into(),
+    ///     session_id: "s1".into(),
+    /// };
+    /// let signed = SignedEvent::seal(0, evt, GENESIS_PARENT_HASH, &kp).unwrap();
+    /// ledger.append(&signed).unwrap();
+    /// assert_eq!(ledger.count().unwrap(), 1);
+    /// ```
     pub fn append(&self, event: &SignedEvent) -> Result<(), LedgerError> {
         let line = serde_json::to_vec(event)?;
         let mut file = self.writer.lock().expect("ledger writer mutex poisoned");
@@ -63,6 +84,38 @@ impl Ledger {
 
     pub fn count(&self) -> Result<u64, LedgerError> {
         Ok(self.read_all()?.len() as u64)
+    }
+
+    /// Walk the ledger end-to-end: recompute every `self_hash`, verify every
+    /// signature, and confirm `parent_hash` of each event matches the previous
+    /// `self_hash`. The returned `ChainReport` is valid only if all three
+    /// checks pass for every event.
+    ///
+    /// ```
+    /// use provedex_core::{
+    ///     AgentEvent, ChainStatus, Ledger, SignedEvent, SigningKeypair,
+    ///     GENESIS_PARENT_HASH,
+    /// };
+    /// let dir = tempfile::tempdir().unwrap();
+    /// let ledger = Ledger::open(dir.path().join("ledger.ndjson")).unwrap();
+    /// let kp = SigningKeypair::generate();
+    /// let mut parent = GENESIS_PARENT_HASH.to_string();
+    /// for i in 0..3 {
+    ///     let evt = AgentEvent::SessionStarted {
+    ///         agent_id: format!("a{i}"),
+    ///         model_id: "m".into(),
+    ///         session_id: "s".into(),
+    ///     };
+    ///     let signed = SignedEvent::seal(i, evt, &parent, &kp).unwrap();
+    ///     parent = signed.self_hash.clone();
+    ///     ledger.append(&signed).unwrap();
+    /// }
+    /// let report = ledger.verify().unwrap();
+    /// assert_eq!(report.status, ChainStatus::Valid);
+    /// assert_eq!(report.event_count, 3);
+    /// ```
+    pub fn verify(&self) -> Result<ChainReport, LedgerError> {
+        Ok(verify_chain(&self.read_all()?))
     }
 }
 
