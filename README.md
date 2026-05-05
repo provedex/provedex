@@ -97,10 +97,6 @@ cargo test --workspace --all-features
 
 CI runs the same three checks on every push and pull request.
 
-## Why this exists
-
-For a non-technical walkthrough of the problem, the buyer, the system design, and how this differs from logging or compliance SaaS, see [EXPLAINER.md](./EXPLAINER.md).
-
 ## Status
 
 Pre-incorporation. Solo founder building toward a YC application demo. The signing primitives, ledger, CLI, and voice demo work end to end. The hosted aggregator, transparency-log anchoring, and SIEM forwarders are not built yet and are out of scope until after funding.

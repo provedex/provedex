@@ -1,5 +1,6 @@
 STARTUP_CONTEXT.md
 TECHNICAL_PLAN.md
+EXPLAINER.md
 
 target/
 **/*.rs.bk
