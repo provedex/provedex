@@ -4,9 +4,12 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use provedex_agent::router::build_router;
+use provedex_agent::router::{build_router_with_limits, RateLimitConfig, DEFAULT_MAX_BODY_BYTES};
 use provedex_agent::state::AgentState;
 use provedex_core::{default_key_path, default_ledger_path, Ledger, LedgerSession, SigningKeypair};
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
+use tower_http::LatencyUnit;
+use tracing::Level;
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser, Debug)]
@@ -34,6 +37,31 @@ struct Args {
     /// front of it.
     #[arg(long, default_value_t = false)]
     insecure_allow_public: bool,
+
+    /// Max request body size on /v1/sign in bytes. Default 32 KiB.
+    #[arg(
+        long,
+        default_value_t = DEFAULT_MAX_BODY_BYTES,
+        env = "PROVEDEX_AGENT_MAX_BODY_BYTES"
+    )]
+    max_body_bytes: usize,
+
+    /// Per-IP token-bucket rate limit on /v1/sign (requests per second).
+    /// Operator endpoints (/v1/healthz, /v1/verify) are not rate-limited.
+    #[arg(long, default_value_t = 100)]
+    rate_limit_per_sec: u64,
+
+    /// Per-IP rate-limit burst on /v1/sign.
+    #[arg(long, default_value_t = 200)]
+    rate_limit_burst: u32,
+
+    /// Disable rate limiting entirely. Useful for trusted single-tenant hosts.
+    #[arg(long, default_value_t = false)]
+    rate_limit_off: bool,
+
+    /// Grace period in seconds for in-flight requests to drain on SIGTERM.
+    #[arg(long, default_value_t = 30)]
+    shutdown_grace_secs: u64,
 }
 
 #[tokio::main]
@@ -68,10 +96,67 @@ async fn main() -> Result<()> {
         LedgerSession::open(keypair, ledger, session_id).context("opening ledger session")?;
     let state = Arc::new(AgentState::new(session));
 
-    let app = build_router(state);
+    let rate_limit = if args.rate_limit_off {
+        None
+    } else {
+        Some(RateLimitConfig {
+            per_sec: args.rate_limit_per_sec,
+            burst: args.rate_limit_burst,
+        })
+    };
 
-    tracing::info!(addr = %args.listen, "provedex-agent listening");
+    let app = build_router_with_limits(state, args.max_body_bytes, rate_limit).layer(
+        TraceLayer::new_for_http()
+            .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
+            .on_response(
+                DefaultOnResponse::new()
+                    .level(Level::INFO)
+                    .latency_unit(LatencyUnit::Millis),
+            ),
+    );
+
+    tracing::info!(
+        addr = %args.listen,
+        max_body_bytes = args.max_body_bytes,
+        rate_limit_off = args.rate_limit_off,
+        rate_per_sec = args.rate_limit_per_sec,
+        rate_burst = args.rate_limit_burst,
+        shutdown_grace_secs = args.shutdown_grace_secs,
+        "provedex-agent listening"
+    );
+
     let listener = tokio::net::TcpListener::bind(args.listen).await?;
-    axum::serve(listener, app).await?;
+    // ConnectInfo wiring required by tower_governor's PeerIpKeyExtractor so
+    // per-IP rate limiting can identify the caller.
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal(args.shutdown_grace_secs))
+    .await?;
     Ok(())
+}
+
+async fn shutdown_signal(grace_secs: u64) {
+    use tokio::signal;
+
+    let ctrl_c = async {
+        signal::ctrl_c().await.expect("ctrl_c handler");
+    };
+
+    #[cfg(unix)]
+    let term = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("sigterm handler")
+            .recv()
+            .await;
+    };
+    #[cfg(not(unix))]
+    let term = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = term => {},
+    }
+    tracing::info!(grace_secs, "shutdown signal received, draining");
 }
