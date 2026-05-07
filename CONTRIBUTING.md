@@ -41,6 +41,15 @@
    cargo test --workspace --all-features
    ```
 
+6. Install dev tooling for commit-msg enforcement and mutation testing.
+
+   ```
+   cargo install --locked cocogitto cargo-mutants
+   cog install-hook commit-msg
+   ```
+
+   `cog` rejects non-conventional commit subjects locally before they leave your machine. `cargo mutants` is documented in the "Mutation testing" section below.
+
 To run the demo server locally:
 
 ```
@@ -83,6 +92,18 @@ Allowed types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `perf`,
 - Comment the why when it is not obvious. Do not narrate what the code does.
 - Names over comments. Small functions over big ones.
 - No new files outside the structure documented in the README and `TECHNICAL_PLAN.md`.
+
+## Mutation testing
+
+Crypto + ledger code in `provedex-core` is covered by mutation testing via `cargo-mutants`. The point: a passing unit test means the code does what we wrote; a passing mutation test means our tests would catch the code being subtly wrong.
+
+Run before any release that touches `crates/provedex-core/src/{chain,ledger,signed,session,keys}.rs`:
+
+```
+cargo mutants -p provedex-core --in-place --file crates/provedex-core/src/chain.rs --file crates/provedex-core/src/ledger.rs --file crates/provedex-core/src/session.rs
+```
+
+Any surviving mutant means a test gap. Fix the test, not the mutant. CI does not run mutants on every push (slow); local discipline before tagging a release is enough.
 
 ## Reporting bugs and security issues
 
