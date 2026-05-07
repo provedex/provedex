@@ -11,7 +11,7 @@ pub async fn verify(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<ChainReport>, (StatusCode, String)> {
     let events = state
-        .ledger
+        .ledger()
         .read_all()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(verify_chain(&events)))

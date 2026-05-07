@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
     state.seal_and_append(provedex_core::AgentEvent::SessionStarted {
         agent_id: "provedex-voice-scribe".into(),
         model_id: "llama3.2:3b".into(),
-        session_id: state.session_id.clone(),
+        session_id: state.session_id().to_string(),
     })?;
 
     let frontend_dir = match args.frontend_dir {
