@@ -894,8 +894,8 @@ git diff main...HEAD --stat
 
 - [ ] **Step 2: Apply auto-block invariants**
 
-- canonical_json + compute_self_hash + GENESIS_PARENT_HASH unchanged. (Agent only orchestrates; reuses LedgerSession.) ✓
-- Public API in core: no change in this PR. ✓
+- canonical_json + compute_self_hash + GENESIS_PARENT_HASH unchanged. (Agent only orchestrates; reuses LedgerSession.)
+- Public API in core: no change in this PR.
 - New `pub` items in agent: AgentState, build_router, SignRequest, Health. They are part of an internal lib used by tests + main; rustdoc on AgentState already added. Add doc comments to the rest if missing.
 - Conventional commit subjects across the branch.
 - ASCII only: `grep -rnP '[^\x00-\x7F]' crates/provedex-agent/ docs/integration/sidecar.md`.
