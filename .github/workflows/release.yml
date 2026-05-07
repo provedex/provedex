@@ -122,10 +122,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: download all artifacts
+      - name: download binary artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist
+          # Pin to our matrix uploads. The unbounded form of this action
+          # was hitting transient 5-retry failures by enumerating every
+          # artifact in the run (including internal GHA-managed ones).
+          pattern: binaries-*
           merge-multiple: true
 
       - name: create release
