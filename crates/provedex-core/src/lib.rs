@@ -3,6 +3,7 @@ pub mod event;
 pub mod export;
 pub mod keys;
 pub mod ledger;
+pub mod session;
 pub mod signed;
 
 pub use chain::{verify_chain, ChainReport, ChainStatus};
@@ -13,6 +14,7 @@ pub use keys::{
     SigningKeypair,
 };
 pub use ledger::{read_file, Ledger, LedgerError};
+pub use session::{LedgerSession, SessionError};
 pub use signed::{
     canonical_json, compute_self_hash, SignedError, SignedEvent, GENESIS_PARENT_HASH,
 };

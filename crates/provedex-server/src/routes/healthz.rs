@@ -16,7 +16,7 @@ pub struct Health {
 pub async fn healthz(State(state): State<Arc<AppState>>) -> Json<Health> {
     Json(Health {
         status: "ok",
-        session_id: state.session_id.clone(),
-        pubkey: state.keypair.pubkey_hex(),
+        session_id: state.session_id().to_string(),
+        pubkey: state.pubkey_hex(),
     })
 }

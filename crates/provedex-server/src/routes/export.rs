@@ -9,7 +9,7 @@ use provedex_core::ExportBundle;
 use crate::state::AppState;
 
 pub async fn export(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let events = match state.ledger.read_all() {
+    let events = match state.ledger().read_all() {
         Ok(e) => e,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
@@ -18,7 +18,7 @@ pub async fn export(State(state): State<Arc<AppState>>) -> impl IntoResponse {
         Ok(b) => b,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     };
-    let filename = format!("provedex-export-{}.json", state.session_id);
+    let filename = format!("provedex-export-{}.json", state.session_id());
     (
         StatusCode::OK,
         [

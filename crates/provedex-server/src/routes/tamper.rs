@@ -21,7 +21,7 @@ pub struct TamperResponse {
 pub async fn tamper_test(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<TamperResponse>, (StatusCode, String)> {
-    let path = state.ledger.path().to_path_buf();
+    let path = state.ledger().path().to_path_buf();
     let result = tokio::task::spawn_blocking(move || tamper(&path)).await;
     match result {
         Ok(Ok(resp)) => Ok(Json(resp)),

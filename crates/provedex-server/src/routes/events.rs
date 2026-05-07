@@ -22,7 +22,7 @@ pub async fn events(State(state): State<Arc<AppState>>) -> impl IntoResponse {
         )),
         Err(_) => None,
     });
-    let backlog = state.ledger.read_all().unwrap_or_default();
+    let backlog = state.ledger().read_all().unwrap_or_default();
     let backlog_stream = futures::stream::iter(backlog.into_iter().map(|evt| {
         Ok::<_, Infallible>(
             Event::default()
