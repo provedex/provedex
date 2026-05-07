@@ -98,9 +98,11 @@ async fn main() -> Result<()> {
 fn find_frontend_dir() -> Result<PathBuf> {
     let cargo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let candidates = [
+        cargo_root.join("../../apps/demo-web"),
         cargo_root.join("../../frontend"),
+        PathBuf::from("apps/demo-web"),
+        PathBuf::from("./apps/demo-web"),
         PathBuf::from("frontend"),
-        PathBuf::from("./frontend"),
     ];
     for p in candidates.iter() {
         if p.is_dir() {

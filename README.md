@@ -26,9 +26,22 @@ crates/
   provedex-core/    signing primitives, hash chain, NDJSON ledger, export bundle
   provedex-cli/     `provedex` command-line tool
   provedex-server/  axum demo server + voice pipeline
-frontend/           single-page demo UI (vanilla HTML, JS, CSS)
+bindings/
+  python/           PyO3 wrapper -> PyPI `provedex` (planned)
+  node/             napi-rs wrapper -> npm `@provedex/core` (planned)
+apps/
+  demo-web/         single-page demo UI (vanilla HTML, JS, CSS)
+docs/
+  spec/             byte-level normative specs
+  adr/              architecture decision records
+  integration/      framework-specific integration guides
+  compliance/       regulator clause mappings (EU AI Act, HIPAA, FINRA, NIST)
+examples/           runnable integration examples
+tests/              cross-crate / cross-language tests
 .github/workflows/  CI: cargo fmt, clippy, test
 ```
+
+See `CLAUDE.md` for the full convention reference (where new files go, naming rules, code standards).
 
 ## Quickstart
 
