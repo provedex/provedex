@@ -158,6 +158,7 @@ docs/
   integration/      framework-specific integration guides
   compliance/       regulator clause mappings (planned)
 examples/           runnable integration examples
+deploy/             systemd, launchd, Kubernetes sidecar manifests
 ```
 
 ## CLI
