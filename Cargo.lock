@@ -1435,6 +1435,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "provedex-agent"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "clap",
+ "dirs",
+ "http-body-util",
+ "provedex-core",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "provedex-cli"
 version = "0.1.0"
 dependencies = [

@@ -4,6 +4,7 @@ members = [
     "crates/provedex-core",
     "crates/provedex-cli",
     "crates/provedex-server",
+    "crates/provedex-agent",
 ]
 
 [workspace.package]
