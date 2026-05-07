@@ -54,3 +54,38 @@ jobs:
 
       - name: cargo test
         run: cargo test --workspace --all-features
+
+  supply-chain:
+    name: cargo audit + deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install rust toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: cache cargo registry + tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            ~/.cargo/bin
+          key: ${{ runner.os }}-supply-chain-${{ hashFiles('**/Cargo.lock', 'deny.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-supply-chain-
+
+      # cargo-audit checks RustSec advisories against Cargo.lock.
+      - name: install cargo-audit
+        run: cargo install --locked cargo-audit || echo "already installed"
+
+      - name: cargo audit
+        run: cargo audit
+
+      # cargo-deny enforces licenses, banned crates, multiple versions, source policy.
+      - name: install cargo-deny
+        run: cargo install --locked cargo-deny || echo "already installed"
+
+      - name: cargo deny check
+        run: cargo deny check

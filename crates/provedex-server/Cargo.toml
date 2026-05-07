@@ -12,7 +12,7 @@ default = ["demo"]
 demo = []
 
 [dependencies]
-provedex-core = { path = "../provedex-core" }
+provedex-core = { path = "../provedex-core", version = "0.1.0" }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 clap = { workspace = true }
