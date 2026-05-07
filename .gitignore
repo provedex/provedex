@@ -1,6 +1,10 @@
 STARTUP_CONTEXT.md
 TECHNICAL_PLAN.md
 EXPLAINER.md
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+**/AGENTS.md
 
 target/
 **/*.rs.bk
