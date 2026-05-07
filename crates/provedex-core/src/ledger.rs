@@ -161,6 +161,17 @@ mod tests {
     }
 
     #[test]
+    fn count_returns_actual_event_count() {
+        let dir = tempdir().unwrap();
+        let l = Ledger::open(dir.path().join("ledger.ndjson")).unwrap();
+        assert_eq!(l.count().unwrap(), 0);
+        for i in 0..5 {
+            l.append(&synth_event(i)).unwrap();
+        }
+        assert_eq!(l.count().unwrap(), 5);
+    }
+
+    #[test]
     fn append_and_read_back() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("ledger.ndjson");

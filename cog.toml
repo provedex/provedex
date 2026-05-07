@@ -1,0 +1,23 @@
+# cocogitto config. See https://docs.cocogitto.io for the full schema.
+#
+# We use Conventional Commits with the workspace-standard type set documented
+# in CONTRIBUTING.md and CLAUDE.md. The `cog` commit-msg hook (installed via
+# `cog install-hook commit-msg`) rejects any commit whose subject does not
+# match this convention.
+
+# Allowed commit types. Mirrors CONTRIBUTING.md exactly.
+[commit_types]
+chore = { changelog_title = "Tooling, ci, repo housekeeping" }
+
+# `feat`, `fix`, `docs`, `refactor`, `test`, `ci`, `perf`, `build` are built
+# in to cocogitto's default type set; we only need to declare additions here.
+
+[changelog]
+path = "CHANGELOG.md"
+authors = []
+
+[branch_whitelist]
+main = "*"
+
+# Keep emoji and unicode symbols out of generated changelogs (we ship ASCII).
+[git_hooks]
