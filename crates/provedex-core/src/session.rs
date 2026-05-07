@@ -26,7 +26,7 @@ pub enum SessionError {
 /// let dir = tempfile::tempdir().unwrap();
 /// let kp = SigningKeypair::generate();
 /// let ledger = Ledger::open(dir.path().join("ledger.ndjson")).unwrap();
-/// let s = LedgerSession::new(kp, ledger, "demo".into());
+/// let s = LedgerSession::open(kp, ledger, "demo".into()).unwrap();
 /// assert_eq!(s.session_id(), "demo");
 /// ```
 #[derive(Debug)]
@@ -39,22 +39,29 @@ pub struct LedgerSession {
 }
 
 impl LedgerSession {
-    /// Construct a session, resuming from any pre-existing events on disk.
-    /// Reads the ledger once at construction to recover the next seq and the
-    /// most recent self_hash for chaining.
-    pub fn new(keypair: SigningKeypair, ledger: Ledger, session_id: String) -> Self {
-        let existing = ledger.read_all().unwrap_or_default();
+    /// Open a session, resuming from any pre-existing events on disk. Reads
+    /// the ledger once at construction to recover the next seq and the most
+    /// recent self_hash for chaining. Returns an error rather than silently
+    /// starting a new chain if the on-disk ledger cannot be read; otherwise
+    /// a corrupt ledger would be silently appended to with seq 0 and break
+    /// the chain.
+    pub fn open(
+        keypair: SigningKeypair,
+        ledger: Ledger,
+        session_id: String,
+    ) -> Result<Self, SessionError> {
+        let existing = ledger.read_all()?;
         let (seq, parent_hash) = match existing.last() {
             Some(last) => (last.seq + 1, last.self_hash.clone()),
             None => (0, GENESIS_PARENT_HASH.to_string()),
         };
-        Self {
+        Ok(Self {
             session_id,
             keypair,
             ledger,
             seq: AtomicU64::new(seq),
             parent_hash: Mutex::new(parent_hash),
-        }
+        })
     }
 
     pub fn session_id(&self) -> &str {
@@ -78,7 +85,7 @@ impl LedgerSession {
     /// let dir = tempfile::tempdir().unwrap();
     /// let kp = SigningKeypair::generate();
     /// let ledger = Ledger::open(dir.path().join("ledger.ndjson")).unwrap();
-    /// let s = LedgerSession::new(kp, ledger, "demo".into());
+    /// let s = LedgerSession::open(kp, ledger, "demo".into()).unwrap();
     /// let signed = s
     ///     .seal_and_append(AgentEvent::SessionStarted {
     ///         agent_id: "a".into(),
@@ -108,7 +115,7 @@ mod tests {
     fn fixture(dir: &std::path::Path) -> LedgerSession {
         let kp = SigningKeypair::generate();
         let ledger = crate::ledger::Ledger::open(dir.join("ledger.ndjson")).unwrap();
-        LedgerSession::new(kp, ledger, "test-session".into())
+        LedgerSession::open(kp, ledger, "test-session".into()).unwrap()
     }
 
     fn evt(i: u64) -> AgentEvent {
@@ -148,7 +155,7 @@ mod tests {
         }
         let kp = SigningKeypair::generate();
         let ledger = crate::ledger::Ledger::open(dir.path().join("ledger.ndjson")).unwrap();
-        let s = LedgerSession::new(kp, ledger, "resume".into());
+        let s = LedgerSession::open(kp, ledger, "resume".into()).unwrap();
         let c = s.seal_and_append(evt(2)).unwrap();
         assert_eq!(c.seq, 2);
         let report = crate::chain::verify_chain(&s.ledger().read_all().unwrap());

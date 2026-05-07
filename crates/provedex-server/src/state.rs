@@ -29,7 +29,8 @@ impl AppState {
         let ledger = Ledger::open(&ledger_path)
             .with_context(|| format!("opening ledger at {}", ledger_path.display()))?;
         let session_id = uuid::Uuid::new_v4().to_string();
-        let session = LedgerSession::new(keypair, ledger, session_id);
+        let session =
+            LedgerSession::open(keypair, ledger, session_id).context("opening ledger session")?;
 
         let (tx, _) = broadcast::channel(EVENT_CHANNEL_CAPACITY);
 
