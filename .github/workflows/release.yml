@@ -57,9 +57,14 @@ jobs:
           set -euo pipefail
           VERSION="${GITHUB_REF#refs/tags/}"
           mkdir -p dist
-          for bin in provedex-agent provedex-cli; do
+          # Archive label : actual binary name. The cli crate is named
+          # provedex-cli but its binary is `provedex` (the user-facing
+          # command name); see crates/provedex-cli/Cargo.toml.
+          for entry in provedex-agent:provedex-agent provedex-cli:provedex; do
+            label="${entry%%:*}"
+            bin="${entry##*:}"
             BIN_OUT="target/${{ matrix.target }}/release/${bin}"
-            ARCHIVE="dist/${bin}-${VERSION}-${{ matrix.target }}.tar.gz"
+            ARCHIVE="dist/${label}-${VERSION}-${{ matrix.target }}.tar.gz"
             tar -C "$(dirname "$BIN_OUT")" -czf "$ARCHIVE" "$(basename "$BIN_OUT")"
             shasum -a 256 "$ARCHIVE" > "$ARCHIVE.sha256"
           done
