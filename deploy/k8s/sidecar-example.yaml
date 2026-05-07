@@ -1,0 +1,47 @@
+# Example: Provedex agent as a sidecar in a customer voice-agent pod.
+# Customer's main app POSTs to http://127.0.0.1:8765/v1/sign.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: voice-agent-with-provedex
+  labels:
+    app: voice-agent
+spec:
+  containers:
+    - name: voice-agent
+      image: example/customer-voice-agent:latest
+      env:
+        - name: PROVEDEX_AGENT_URL
+          value: http://127.0.0.1:8765/v1/sign
+    - name: provedex-agent
+      image: ghcr.io/provedex/provedex-agent:latest
+      args: ["--listen", "127.0.0.1:8765"]
+      ports:
+        - containerPort: 8765
+          name: provedex
+      volumeMounts:
+        - name: provedex-data
+          mountPath: /var/lib/provedex
+        - name: provedex-key
+          mountPath: /etc/provedex
+          readOnly: true
+      env:
+        - name: PROVEDEX_LEDGER
+          value: /var/lib/provedex/ledger.ndjson
+        - name: PROVEDEX_KEY
+          value: /etc/provedex/ed25519.key
+      resources:
+        requests:
+          cpu: 50m
+          memory: 32Mi
+        limits:
+          cpu: 250m
+          memory: 128Mi
+  volumes:
+    - name: provedex-data
+      persistentVolumeClaim:
+        claimName: provedex-ledger
+    - name: provedex-key
+      secret:
+        secretName: provedex-signing-key
+        defaultMode: 0400
