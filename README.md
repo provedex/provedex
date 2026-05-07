@@ -26,6 +26,36 @@ Provedex is the primitive underneath. Sign locally, chain locally, verify offlin
 
 Native bindings (Python, Node) are planned as optional fast-paths; the sidecar covers every other language via localhost HTTP. See ADR 0004.
 
+## Install
+
+### Pre-built binary (recommended)
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/provedex/provedex/releases) and extract:
+
+```bash
+tar -xzf provedex-agent-vN.N.N-aarch64-apple-darwin.tar.gz
+sudo install -m 755 provedex-agent /usr/local/bin/
+```
+
+### Container (Kubernetes / Docker)
+
+```bash
+docker pull ghcr.io/provedex/provedex-agent:latest
+docker run --rm -p 8765:8765 ghcr.io/provedex/provedex-agent:latest
+```
+
+Multi-arch: `linux/amd64`, `linux/arm64`. Customer apps in the same pod or Docker network POST to the agent's `/v1/sign` endpoint.
+
+### From source
+
+```bash
+cargo install --locked --git https://github.com/provedex/provedex --bin provedex-agent
+```
+
+### systemd / launchd / Kubernetes manifests
+
+See [`deploy/`](deploy/) for ready-to-adapt manifests.
+
 ## Quickstart - sidecar
 
 The sidecar is the default integration path for any non-Rust app.
@@ -128,6 +158,7 @@ docs/
   integration/      framework-specific integration guides
   compliance/       regulator clause mappings (planned)
 examples/           runnable integration examples
+deploy/             systemd, launchd, Kubernetes sidecar manifests
 ```
 
 ## CLI

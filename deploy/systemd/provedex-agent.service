@@ -1,0 +1,28 @@
+[Unit]
+Description=Provedex sidecar HTTP signing daemon
+Documentation=https://github.com/provedex/provedex/blob/main/docs/integration/sidecar.md
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/provedex-agent
+Restart=on-failure
+RestartSec=5
+
+# Operator-controlled paths via env. Override in /etc/default/provedex-agent.
+EnvironmentFile=-/etc/default/provedex-agent
+
+# Sandboxing.
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/provedex
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+LockPersonality=true
+RestrictNamespaces=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
