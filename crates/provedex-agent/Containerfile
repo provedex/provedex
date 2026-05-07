@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.7
+
+# --- builder ---
+FROM rust:1.89-slim-bookworm AS builder
+
+WORKDIR /src
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends pkg-config libssl-dev ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY Cargo.toml Cargo.lock ./
+COPY rust-toolchain.toml ./
+COPY crates ./crates
+
+RUN cargo build --release --locked -p provedex-agent
+
+# --- runtime ---
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd --system --no-create-home --shell /sbin/nologin provedex \
+ && mkdir -p /var/lib/provedex /etc/provedex \
+ && chown provedex:provedex /var/lib/provedex /etc/provedex
+
+COPY --from=builder /src/target/release/provedex-agent /usr/local/bin/provedex-agent
+
+USER provedex
+EXPOSE 8765
+
+ENV PROVEDEX_LEDGER=/var/lib/provedex/ledger.ndjson \
+    PROVEDEX_KEY=/etc/provedex/ed25519.key \
+    PROVEDEX_AGENT_LISTEN=0.0.0.0:8765 \
+    RUST_LOG=info
+
+ENTRYPOINT ["/usr/local/bin/provedex-agent"]
+CMD ["--insecure-allow-public"]
