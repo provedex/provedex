@@ -105,6 +105,24 @@ cargo mutants -p provedex-core --in-place --file crates/provedex-core/src/chain.
 
 Any surviving mutant means a test gap. Fix the test, not the mutant. CI does not run mutants on every push (slow); local discipline before tagging a release is enough.
 
+## Benchmarking
+
+Latency numbers for `provedex-core` hot paths live in `crates/provedex-core/benches/sign_bench.rs`. Run before tagging a release:
+
+```
+cargo bench -p provedex-core
+```
+
+To diff against a saved baseline:
+
+```
+cargo bench -p provedex-core -- --save-baseline v0.1.0
+# ... make changes ...
+cargo bench -p provedex-core -- --baseline v0.1.0
+```
+
+CI does not run benches; criterion needs warmup time and stable hardware. Run them locally on a quiet machine. Update the README "Performance" table any time a benchmark moves more than 10 percent.
+
 ## Reporting bugs and security issues
 
 Open an issue using the bug-report template for non-security bugs. For security reports, follow `SECURITY.md`.

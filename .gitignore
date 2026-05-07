@@ -12,6 +12,7 @@ Cargo.lock.bak
 
 mutants.out/
 mutants.out.old/
+target/criterion/
 
 .DS_Store
 .vscode/

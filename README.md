@@ -160,6 +160,19 @@ cargo test --workspace --all-features
 
 CI runs the same three checks plus `cargo audit` and `cargo deny` on every push and pull request. Mutation testing on `provedex-core` is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Performance
+
+Numbers from `cargo bench -p provedex-core` on an Apple M4 Pro running rustc 1.89.0, criterion default sample size (100), 3-second warmup. Reproduce: `cargo bench -p provedex-core`.
+
+| Operation | Median time / event | Throughput |
+|-----------|--------------------|------------|
+| `canonical_json` (one ModelInvoked event) | 940 ns | 1.06M events/sec |
+| `compute_self_hash` (canonical-JSON + SHA-256) | 2.7 us | 366K events/sec |
+| `SignedEvent::seal` (full sign, no I/O) | 11.2 us | 89K events/sec |
+| `LedgerSession::seal_and_append` (sign + append + fsync_data) | 3.8 ms | 261 events/sec |
+
+`seal_only` isolates the crypto cost. The full append cycle is dominated by `fsync_data` on every event; customers that batch flushes will see the full-cycle cost approach the seal-only number. Voice agents in the typical 50 RPS regime stay well under the per-event budget either way.
+
 ## Versioning
 
 Pre-1.0. The public API of `provedex-core` may change between minor versions until the schema is settled. Any breaking change to the canonical-JSON format, the hashed-field set, or the AgentEvent variants requires:
