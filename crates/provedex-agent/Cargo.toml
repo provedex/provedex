@@ -1,0 +1,36 @@
+[package]
+name = "provedex-agent"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Provedex sidecar daemon: localhost HTTP signing API for any-language customer apps"
+
+[[bin]]
+name = "provedex-agent"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+provedex-core = { path = "../provedex-core", version = "0.1.0" }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+dirs = { workspace = true }
+
+[dev-dependencies]
+http-body-util = "0.1"
+tower = { workspace = true, features = ["util"] }
+tempfile = "3.12"
