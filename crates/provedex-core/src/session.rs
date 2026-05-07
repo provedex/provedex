@@ -1,4 +1,102 @@
-pub struct LedgerSession;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
+
+use thiserror::Error;
+
+use crate::event::AgentEvent;
+use crate::keys::SigningKeypair;
+use crate::ledger::{Ledger, LedgerError};
+use crate::signed::{SignedError, SignedEvent, GENESIS_PARENT_HASH};
+
+#[derive(Debug, Error)]
+pub enum SessionError {
+    #[error("ledger: {0}")]
+    Ledger(#[from] LedgerError),
+    #[error("signed: {0}")]
+    Signed(#[from] SignedError),
+}
+
+/// Owns the seq counter, parent_hash mutex, signing key, and ledger handle for
+/// a single signing session. Both `provedex-server` and the upcoming
+/// `provedex-agent` sidecar build on this primitive so the chain invariants
+/// live in one place.
+///
+/// ```
+/// use provedex_core::{Ledger, LedgerSession, SigningKeypair};
+/// let dir = tempfile::tempdir().unwrap();
+/// let kp = SigningKeypair::generate();
+/// let ledger = Ledger::open(dir.path().join("ledger.ndjson")).unwrap();
+/// let s = LedgerSession::new(kp, ledger, "demo".into());
+/// assert_eq!(s.session_id(), "demo");
+/// ```
+#[derive(Debug)]
+pub struct LedgerSession {
+    session_id: String,
+    keypair: SigningKeypair,
+    ledger: Ledger,
+    seq: AtomicU64,
+    parent_hash: Mutex<String>,
+}
+
+impl LedgerSession {
+    /// Construct a session, resuming from any pre-existing events on disk.
+    /// Reads the ledger once at construction to recover the next seq and the
+    /// most recent self_hash for chaining.
+    pub fn new(keypair: SigningKeypair, ledger: Ledger, session_id: String) -> Self {
+        let existing = ledger.read_all().unwrap_or_default();
+        let (seq, parent_hash) = match existing.last() {
+            Some(last) => (last.seq + 1, last.self_hash.clone()),
+            None => (0, GENESIS_PARENT_HASH.to_string()),
+        };
+        Self {
+            session_id,
+            keypair,
+            ledger,
+            seq: AtomicU64::new(seq),
+            parent_hash: Mutex::new(parent_hash),
+        }
+    }
+
+    pub fn session_id(&self) -> &str {
+        &self.session_id
+    }
+
+    pub fn pubkey_hex(&self) -> String {
+        self.keypair.pubkey_hex()
+    }
+
+    pub fn ledger(&self) -> &Ledger {
+        &self.ledger
+    }
+
+    /// Atomically allocate the next seq, sign the event against the current
+    /// parent hash, append to the ledger, and update the parent hash. This is
+    /// the only sanctioned event emitter for live runs.
+    ///
+    /// ```
+    /// use provedex_core::{AgentEvent, Ledger, LedgerSession, SigningKeypair};
+    /// let dir = tempfile::tempdir().unwrap();
+    /// let kp = SigningKeypair::generate();
+    /// let ledger = Ledger::open(dir.path().join("ledger.ndjson")).unwrap();
+    /// let s = LedgerSession::new(kp, ledger, "demo".into());
+    /// let signed = s
+    ///     .seal_and_append(AgentEvent::SessionStarted {
+    ///         agent_id: "a".into(),
+    ///         model_id: "m".into(),
+    ///         session_id: "s".into(),
+    ///     })
+    ///     .unwrap();
+    /// assert_eq!(signed.seq, 0);
+    /// ```
+    pub fn seal_and_append(&self, event: AgentEvent) -> Result<SignedEvent, SessionError> {
+        let seq = self.seq.fetch_add(1, Ordering::SeqCst);
+        let mut parent = self.parent_hash.lock().expect("parent_hash mutex poisoned");
+        let signed = SignedEvent::seal(seq, event, &parent, &self.keypair)?;
+        self.ledger.append(&signed)?;
+        *parent = signed.self_hash.clone();
+        Ok(signed)
+    }
+}
 
 #[cfg(test)]
 mod tests {
