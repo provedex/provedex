@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::body::{to_bytes, Body};
 use axum::http::{Request, StatusCode};
-use provedex_agent::router::build_router;
+use provedex_agent::router::{build_router, build_router_with_limits};
 use provedex_agent::state::AgentState;
 use provedex_core::{Ledger, LedgerSession, SigningKeypair};
 use serde_json::{json, Value};
@@ -126,6 +126,44 @@ async fn verify_returns_chain_report() {
     let v = body_json(resp.into_body()).await;
     assert_eq!(v["status"], "valid");
     assert_eq!(v["event_count"], 1);
+}
+
+#[tokio::test]
+async fn sign_returns_413_on_oversize_body() {
+    let (state, _dir) = fixture().await;
+    let app = build_router_with_limits(state, 1024, None);
+    let big = "A".repeat(2048);
+    let body = serde_json::to_vec(&json!({
+        "event": {
+            "type": "SessionStarted",
+            "payload": { "agent_id": big, "model_id": "m", "session_id": "s" }
+        }
+    }))
+    .unwrap();
+    let req = Request::builder()
+        .method("POST")
+        .uri("/v1/sign")
+        .header("content-type", "application/json")
+        .body(Body::from(body))
+        .unwrap();
+    let resp = app.oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE);
+}
+
+#[tokio::test]
+async fn healthz_reports_ledger_writable() {
+    let (state, _dir) = fixture().await;
+    let app = build_router(state);
+    let req = Request::builder()
+        .method("GET")
+        .uri("/v1/healthz")
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    let v = body_json(resp.into_body()).await;
+    assert_eq!(v["ledger_writable"], true);
+    assert!(v["ledger_path"].as_str().unwrap().contains("ledger.ndjson"));
 }
 
 #[tokio::test]
