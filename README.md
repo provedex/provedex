@@ -204,6 +204,26 @@ Numbers from `cargo bench -p provedex-core` on an Apple M4 Pro running rustc 1.8
 
 `seal_only` isolates the crypto cost. The full append cycle is dominated by `fsync_data` on every event; customers that batch flushes will see the full-cycle cost approach the seal-only number. Voice agents in the typical 50 RPS regime stay well under the per-event budget either way.
 
+### Sidecar HTTP roundtrip
+
+Numbers from `bash benchmarks/agent-http/run.sh` on the same hardware. Loopback HTTP via `oha`. Each scenario gets a fresh agent with an empty ledger.
+
+| Endpoint | Concurrency | p50 | p95 | p99 | req/sec |
+|----------|-------------|-----|-----|-----|---------|
+| GET /v1/healthz | 50 | 0.91 ms | 2.80 ms | 6.31 ms | 43,095 |
+| POST /v1/sign | 1 | 3.96 ms | 5.04 ms | 6.67 ms | 254 |
+| POST /v1/sign | 10 | 36.0 ms | 42.8 ms | 50.7 ms | 275 |
+| POST /v1/sign | 100 | 333 ms | 676 ms | 859 ms | 281 |
+| POST /v1/verify (100 events) | 1 | 2.09 ms | 2.18 ms | 2.38 ms | 476 |
+| POST /v1/verify (1k events) | 1 | 3.97 ms | 4.12 ms | 4.28 ms | 251 |
+| POST /v1/verify (10k events) | 1 | 10.9 ms | 11.4 ms | 11.9 ms | 90 |
+
+Reproduce: `bash benchmarks/agent-http/run.sh`.
+
+The /v1/sign cost is roughly 0.2 ms HTTP overhead on top of in-process `seal_and_append` (3.8 ms with fsync). Sign throughput plateaus near 250 req/sec regardless of concurrency because `fsync_data` on every event serializes the writer. Customers that need higher per-key throughput either run multiple agents (one per signing identity) or batch flushes (planned). Verify scales linearly with chain size; verify on a 100k-event ledger takes roughly 100 ms.
+
+`/v1/healthz` is fast enough for Kubernetes liveness probes at any reasonable cadence (43k req/sec single-agent throughput).
+
 ## Versioning
 
 Pre-1.0. The public API of `provedex-core` may change between minor versions until the schema is settled. Any breaking change to the canonical-JSON format, the hashed-field set, or the AgentEvent variants requires:
