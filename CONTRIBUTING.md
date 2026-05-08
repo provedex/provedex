@@ -123,6 +123,15 @@ cargo bench -p provedex-core -- --baseline v0.1.0
 
 CI does not run benches; criterion needs warmup time and stable hardware. Run them locally on a quiet machine. Update the README "Performance" table any time a benchmark moves more than 10 percent.
 
+For sidecar HTTP latency:
+
+```
+cargo install --locked oha
+bash benchmarks/agent-http/run.sh
+```
+
+The script spawns a fresh agent per scenario, runs oha against /v1/healthz, /v1/sign, and /v1/verify, and prints a summary table. See `benchmarks/agent-http/README.md` for what each scenario measures and when to re-run. Update README "Performance > Sidecar HTTP" if any number moves more than 10 percent.
+
 ## Reporting bugs and security issues
 
 Open an issue using the bug-report template for non-security bugs. For security reports, follow `SECURITY.md`.
