@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::signed::{SignedEvent, GENESIS_PARENT_HASH};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum ChainStatus {
     Valid,
@@ -10,6 +11,7 @@ pub enum ChainStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 pub struct ChainReport {
     pub status: ChainStatus,
     pub event_count: u64,
