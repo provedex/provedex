@@ -7,6 +7,15 @@ use provedex_core::{verify_chain, ChainReport};
 
 use crate::state::AgentState;
 
+#[utoipa::path(
+    post,
+    path = "/v1/verify",
+    tag = "agent",
+    responses(
+        (status = 200, description = "Ledger walked end to end; ChainReport carries the verdict", body = ChainReport),
+        (status = 500, description = "Ledger read failed"),
+    ),
+)]
 pub async fn verify(
     State(state): State<Arc<AgentState>>,
 ) -> Result<Json<ChainReport>, (StatusCode, String)> {

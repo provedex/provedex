@@ -9,11 +9,24 @@ use serde::Deserialize;
 
 use crate::state::AgentState;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct SignRequest {
     pub event: AgentEvent,
 }
 
+#[utoipa::path(
+    post,
+    path = "/v1/sign",
+    tag = "agent",
+    request_body = SignRequest,
+    responses(
+        (status = 200, description = "Event sealed and appended to the ledger", body = SignedEvent),
+        (status = 400, description = "Malformed JSON or unknown event variant"),
+        (status = 413, description = "Request body exceeded the configured size cap"),
+        (status = 429, description = "Per-IP rate limit exceeded"),
+        (status = 500, description = "Ledger write failed"),
+    ),
+)]
 pub async fn sign(
     State(state): State<Arc<AgentState>>,
     body: Result<Json<SignRequest>, JsonRejection>,
