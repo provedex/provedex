@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use clap::Parser;
+use provedex_agent::openapi::ApiDoc;
 use provedex_agent::router::{build_router_with_limits, RateLimitConfig, DEFAULT_MAX_BODY_BYTES};
 use provedex_agent::state::AgentState;
 use provedex_core::{default_key_path, default_ledger_path, Ledger, LedgerSession, SigningKeypair};
@@ -11,6 +12,7 @@ use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tower_http::LatencyUnit;
 use tracing::Level;
 use tracing_subscriber::EnvFilter;
+use utoipa::OpenApi;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -62,18 +64,31 @@ struct Args {
     /// Grace period in seconds for in-flight requests to drain on SIGTERM.
     #[arg(long, default_value_t = 30)]
     shutdown_grace_secs: u64,
+
+    /// Print the OpenAPI 3 spec for the HTTP API as YAML to stdout and exit.
+    /// Used to regenerate the committed docs/spec/openapi.yaml.
+    #[arg(long, default_value_t = false)]
+    print_openapi: bool,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = Args::parse();
+
+    if args.print_openapi {
+        let yaml = ApiDoc::openapi()
+            .to_yaml()
+            .context("serializing OpenAPI spec to YAML")?;
+        print!("{yaml}");
+        return Ok(());
+    }
+
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info,axum=info")),
         )
         .compact()
         .init();
-
-    let args = Args::parse();
 
     if !args.listen.ip().is_loopback() && !args.insecure_allow_public {
         anyhow::bail!(
