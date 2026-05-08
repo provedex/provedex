@@ -177,6 +177,9 @@ Normative documents that bindings, auditors, and third-party verifiers implement
 
 - [docs/spec/event-schema-v1.md](docs/spec/event-schema-v1.md) - the seven `AgentEvent` variants and their JSON shape, with test vectors.
 - [docs/spec/canonical-json.md](docs/spec/canonical-json.md) - the deterministic JSON encoding used for hashing and signing, with test vectors.
+- [docs/spec/signature-scheme.md](docs/spec/signature-scheme.md) - Ed25519 over SHA-256 of canonical-JSON, keypair file format, deterministic signature test vectors.
+- [docs/spec/ledger-format.md](docs/spec/ledger-format.md) - NDJSON line format, append/read/crash-recovery semantics for the local ledger.
+- [docs/spec/openapi.yaml](docs/spec/openapi.yaml) - OpenAPI 3 description of the sidecar HTTP API. Generated from the agent source via `provedex-agent --print-openapi`.
 - [docs/adr/](docs/adr/) - architecture decision records.
 
 A binding implementation that follows these specs produces signed events byte-identical to the Rust reference.

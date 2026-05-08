@@ -4,6 +4,16 @@
 
 This is the default integration for any language other than Rust (decision in ADR 0004). Native bindings (`bindings/python`, `bindings/node`) are optional fast-paths for sub-millisecond signing.
 
+## Authoritative API contract
+
+The OpenAPI 3 spec at [`docs/spec/openapi.yaml`](../spec/openapi.yaml) is the canonical contract. It is generated from the agent source on every release via `provedex-agent --print-openapi`, so it cannot drift from the implementation. The prose and code samples below are illustrative; when in doubt, trust the OpenAPI spec.
+
+To generate clients, run an OpenAPI generator against `docs/spec/openapi.yaml`. Example:
+
+```
+openapi-generator-cli generate -i docs/spec/openapi.yaml -g python -o ./client-python
+```
+
 ## Install
 
 After v1 release, prebuilt binaries land on GitHub Releases. Until then:
