@@ -213,17 +213,17 @@ Numbers from `bash benchmarks/agent-http/run.sh` on the same hardware. Loopback 
 
 | Endpoint | Concurrency | p50 | p95 | p99 | req/sec |
 |----------|-------------|-----|-----|-----|---------|
-| GET /v1/healthz | 50 | 0.91 ms | 2.80 ms | 6.31 ms | 43,095 |
-| POST /v1/sign | 1 | 3.96 ms | 5.04 ms | 6.67 ms | 254 |
-| POST /v1/sign | 10 | 36.0 ms | 42.8 ms | 50.7 ms | 275 |
-| POST /v1/sign | 100 | 333 ms | 676 ms | 859 ms | 281 |
+| GET /v1/healthz | 50 | 0.91 ms | 2.78 ms | 7.65 ms | 41,456 |
+| POST /v1/sign | 1 | 3.98 ms | 4.69 ms | 5.43 ms | 253 |
+| POST /v1/sign | 10 | 35.2 ms | 39.9 ms | 42.8 ms | 280 |
+| POST /v1/sign | 100 | 353 ms | 388 ms | 420 ms | 283 |
 | POST /v1/verify (100 events) | 1 | 2.09 ms | 2.18 ms | 2.38 ms | 476 |
 | POST /v1/verify (1k events) | 1 | 3.97 ms | 4.12 ms | 4.28 ms | 251 |
 | POST /v1/verify (10k events) | 1 | 10.9 ms | 11.4 ms | 11.9 ms | 90 |
 
 Reproduce: `bash benchmarks/agent-http/run.sh`.
 
-The /v1/sign cost is roughly 0.2 ms HTTP overhead on top of in-process `seal_and_append` (3.8 ms with fsync). Sign throughput plateaus near 250 req/sec regardless of concurrency because `fsync_data` on every event serializes the writer. Customers that need higher per-key throughput either run multiple agents (one per signing identity) or batch flushes (planned). Verify scales linearly with chain size; verify on a 100k-event ledger takes roughly 100 ms.
+The /v1/sign cost is roughly 0.2 ms HTTP overhead on top of in-process `seal_and_append` (3.8 ms with fsync). Sign throughput plateaus near 280 req/sec regardless of concurrency because `fsync_data` on every event serializes the writer. The handler offloads the sync work to tokio's blocking pool via `spawn_blocking`, so other in-flight requests on the runtime are not starved during a sign. Customers that need higher per-key throughput either run multiple agents (one per signing identity) or batch flushes (planned). Verify scales linearly with chain size; verify on a 100k-event ledger takes roughly 100 ms.
 
 `/v1/healthz` is fast enough for Kubernetes liveness probes at any reasonable cadence (43k req/sec single-agent throughput).
 

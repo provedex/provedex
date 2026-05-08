@@ -40,9 +40,19 @@ pub async fn sign(
         };
         (status, e.to_string())
     })?;
-    let signed = state
-        .session
-        .seal_and_append(req.event)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // seal_and_append calls fsync_data plus a SHA-256 + Ed25519 sign. All three
+    // are blocking work; running them on a tokio runtime thread starves other
+    // in-flight requests. spawn_blocking moves the work to the blocking pool.
+    let state_for_blocking = state.clone();
+    let signed =
+        tokio::task::spawn_blocking(move || state_for_blocking.session.seal_and_append(req.event))
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("join error: {e}"),
+                )
+            })?
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(signed))
 }
