@@ -1,0 +1,338 @@
+openapi: 3.1.0
+info:
+  title: provedex-agent
+  description: Provedex sidecar HTTP signing daemon. Customer applications POST events to /v1/sign; the agent seals them with the local Ed25519 keypair and appends them to the NDJSON ledger. /v1/verify walks the ledger and reports chain integrity. /v1/healthz reports liveness plus a non-destructive ledger-writable probe.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+  version: 0.1.0
+servers:
+- url: http://127.0.0.1:8765
+  description: Default loopback bind
+paths:
+  /v1/healthz:
+    get:
+      tags:
+      - agent
+      operationId: healthz
+      responses:
+        '200':
+          description: Agent is healthy and ledger is writable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '503':
+          description: Agent is degraded; ledger is not writable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /v1/sign:
+    post:
+      tags:
+      - agent
+      operationId: sign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignRequest'
+        required: true
+      responses:
+        '200':
+          description: Event sealed and appended to the ledger
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedEvent'
+        '400':
+          description: Malformed JSON or unknown event variant
+        '413':
+          description: Request body exceeded the configured size cap
+        '429':
+          description: Per-IP rate limit exceeded
+        '500':
+          description: Ledger write failed
+  /v1/verify:
+    post:
+      tags:
+      - agent
+      operationId: verify
+      responses:
+        '200':
+          description: Ledger walked end to end; ChainReport carries the verdict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChainReport'
+        '500':
+          description: Ledger read failed
+components:
+  schemas:
+    AgentEvent:
+      oneOf:
+      - type: object
+        required:
+        - payload
+        - type
+        properties:
+          payload:
+            type: object
+            required:
+            - agent_id
+            - model_id
+            - session_id
+            properties:
+              agent_id:
+                type: string
+              model_id:
+                type: string
+              session_id:
+                type: string
+          type:
+            type: string
+            enum:
+            - SessionStarted
+      - type: object
+        required:
+        - payload
+        - type
+        properties:
+          payload:
+            type: object
+            required:
+            - audio_sha256
+            - transcript
+            - lang
+            - duration_ms
+            properties:
+              audio_sha256:
+                type: string
+              duration_ms:
+                type: integer
+                format: int64
+                minimum: 0
+              lang:
+                type: string
+              transcript:
+                type: string
+          type:
+            type: string
+            enum:
+            - UtteranceCaptured
+      - type: object
+        required:
+        - payload
+        - type
+        properties:
+          payload:
+            type: object
+            required:
+            - tool_name
+            - args_sha256
+            - args_redacted
+            properties:
+              args_redacted: {}
+              args_sha256:
+                type: string
+              tool_name:
+                type: string
+          type:
+            type: string
+            enum:
+            - ToolCalled
+      - type: object
+        required:
+        - payload
+        - type
+        properties:
+          payload:
+            type: object
+            required:
+            - tool_name
+            - result_sha256
+            - latency_ms
+            - success
+            properties:
+              latency_ms:
+                type: integer
+                format: int64
+                minimum: 0
+              result_sha256:
+                type: string
+              success:
+                type: boolean
+              tool_name:
+                type: string
+          type:
+            type: string
+            enum:
+            - ToolReturned
+      - type: object
+        required:
+        - payload
+        - type
+        properties:
+          payload:
+            type: object
+            required:
+            - model_id
+            - prompt_sha256
+            - response_sha256
+            - prompt_tokens
+            - response_tokens
+            properties:
+              model_id:
+                type: string
+              prompt_sha256:
+                type: string
+              prompt_tokens:
+                type: integer
+                format: int32
+                minimum: 0
+              response_sha256:
+                type: string
+              response_tokens:
+                type: integer
+                format: int32
+                minimum: 0
+          type:
+            type: string
+            enum:
+            - ModelInvoked
+      - type: object
+        required:
+        - payload
+        - type
+        properties:
+          payload:
+            type: object
+            required:
+            - text_sha256
+            - text
+            - audio_sha256
+            properties:
+              audio_sha256:
+                type: string
+              text:
+                type: string
+              text_sha256:
+                type: string
+          type:
+            type: string
+            enum:
+            - UtteranceSpoken
+      - type: object
+        required:
+        - payload
+        - type
+        properties:
+          payload:
+            type: object
+            required:
+            - reason
+            - summary_sha256
+            properties:
+              reason:
+                type: string
+              summary_sha256:
+                type: string
+          type:
+            type: string
+            enum:
+            - SessionEnded
+    ChainReport:
+      type: object
+      required:
+      - status
+      - event_count
+      - root_hash
+      properties:
+        broken_at_seq:
+          type:
+          - integer
+          - 'null'
+          format: int64
+          minimum: 0
+        broken_reason:
+          type:
+          - string
+          - 'null'
+        event_count:
+          type: integer
+          format: int64
+          minimum: 0
+        root_hash:
+          type: string
+        status:
+          $ref: '#/components/schemas/ChainStatus'
+    ChainStatus:
+      type: string
+      enum:
+      - valid
+      - broken
+    Health:
+      type: object
+      required:
+      - status
+      - session_id
+      - pubkey
+      - ledger_writable
+      - ledger_path
+      properties:
+        ledger_path:
+          type: string
+          description: Absolute path of the ledger file on the agent host.
+        ledger_writable:
+          type: boolean
+          description: Whether the ledger directory passed a non-destructive write probe.
+        pubkey:
+          type: string
+          description: Hex-encoded Ed25519 public key of the signing keypair.
+        session_id:
+          type: string
+          description: UUID assigned to this agent process at startup.
+        status:
+          type: string
+          description: '"ok" when the ledger is writable, "degraded" otherwise.'
+          example: ok
+    SignRequest:
+      type: object
+      required:
+      - event
+      properties:
+        event:
+          $ref: '#/components/schemas/AgentEvent'
+    SignedEvent:
+      type: object
+      required:
+      - seq
+      - timestamp_nanos
+      - event
+      - parent_hash
+      - self_hash
+      - signature
+      - signer_pubkey
+      properties:
+        event:
+          $ref: '#/components/schemas/AgentEvent'
+        parent_hash:
+          type: string
+        self_hash:
+          type: string
+        seq:
+          type: integer
+          format: int64
+          minimum: 0
+        signature:
+          type: string
+        signer_pubkey:
+          type: string
+        timestamp_nanos:
+          type: integer
+          format: int64
+          minimum: 0
+tags:
+- name: agent
+  description: Sidecar HTTP signing daemon endpoints
