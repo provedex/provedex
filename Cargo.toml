@@ -43,6 +43,8 @@ which = "6.0"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.10", features = ["v4", "serde"] }
 bytes = "1.7"
+utoipa = { version = "5.4", features = ["yaml"] }
+serde_yaml = "0.9"
 
 [profile.release]
 lto = "thin"

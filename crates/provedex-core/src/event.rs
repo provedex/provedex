@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 #[serde(tag = "type", content = "payload")]
 pub enum AgentEvent {
     SessionStarted {

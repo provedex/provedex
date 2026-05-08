@@ -24,6 +24,7 @@ pub enum SignedError {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "openapi", derive(utoipa::ToSchema))]
 pub struct SignedEvent {
     pub seq: u64,
     pub timestamp_nanos: u64,

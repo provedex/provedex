@@ -15,7 +15,7 @@ path = "src/main.rs"
 path = "src/lib.rs"
 
 [dependencies]
-provedex-core = { path = "../provedex-core", version = "0.1.0" }
+provedex-core = { path = "../provedex-core", version = "0.1.0", features = ["openapi"] }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
@@ -26,6 +26,8 @@ axum = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
 tower_governor = { workspace = true }
+utoipa = { workspace = true }
+serde_yaml = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 uuid = { workspace = true }
