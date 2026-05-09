@@ -22,9 +22,10 @@ Provedex is the primitive underneath. Sign locally, chain locally, verify offlin
 | `provedex-core` | signing primitives, hash chain, NDJSON ledger, export bundle | shipped |
 | `provedex-cli` | `provedex` command-line tool: verify, replay, export | shipped |
 | `provedex-agent` | localhost HTTP signing daemon for non-Rust customers (default integration) | shipped |
-| `provedex-server` | reference voice-agent demo (whisper.cpp + Ollama + Piper) | shipped, demo-only |
 
 Native bindings (Python, Node) are planned as optional fast-paths; the sidecar covers every other language via localhost HTTP. See ADR 0004.
+
+The reference voice-agent integration (whisper.cpp + Ollama + Piper) lives in its own repo at [provedex/demo-voice](https://github.com/provedex/demo-voice). It dogfoods this SDK against the published `v0.1.0` tag.
 
 ## Install
 
@@ -112,32 +113,11 @@ Run the minimal end-to-end example:
 cargo run -p provedex-core --example basic_signing
 ```
 
-## Voice agent reference (optional)
+## Voice agent reference (separate repo)
 
-The `provedex-server` crate runs a local voice scribe pipeline against the sidecar primitives. Useful as a working integration example. Requires ffmpeg, Ollama, and a whisper model.
+A working voice-agent integration on top of this SDK lives at [`provedex/demo-voice`](https://github.com/provedex/demo-voice). It records audio in the browser, transcribes via whisper.cpp, calls a local Ollama model, signs every step with `provedex-core` v0.1.0 (consumed via git tag), and optionally speaks the reply via Piper.
 
-```bash
-# Install runtime deps
-brew install ffmpeg ollama
-ollama serve &
-ollama pull llama3.2:3b
-
-# Whisper model
-mkdir -p ~/.provedex/models
-curl -L -o ~/.provedex/models/ggml-base.en.bin \
-  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
-
-# (Optional) Piper TTS for spoken replies
-pipx install piper-tts
-mkdir -p ~/.provedex/voices
-curl -L -o ~/.provedex/voices/en_US-amy-medium.onnx \
-  https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx
-
-# Run the demo
-cargo run -p provedex-server --features demo
-```
-
-Open `http://localhost:3000` and hold the mic button. Signed events stream into the right panel. The footer buttons run verify, tamper-test, and export.
+That repo is the reference dogfood: how a customer integrates `provedex-core` into a real voice pipeline.
 
 ## Repository layout
 
@@ -146,20 +126,20 @@ crates/
   provedex-core/    signing primitives, hash chain, NDJSON ledger, export bundle
   provedex-cli/     `provedex` command-line tool
   provedex-agent/   localhost HTTP signing daemon (default integration)
-  provedex-server/  voice-agent reference demo
 bindings/
   python/           PyO3 wrapper (planned)
   node/             napi-rs wrapper (planned)
-apps/
-  demo-web/         single-page UI for the voice-agent reference
 docs/
-  spec/             byte-level normative specs (event-schema-v1, canonical-json)
+  spec/             byte-level normative specs (canonical-json, event-schema-v1, signature-scheme, ledger-format, openapi.yaml)
   adr/              architecture decision records
   integration/      framework-specific integration guides
   compliance/       regulator clause mappings (planned)
 examples/           runnable integration examples
 deploy/             systemd, launchd, Kubernetes sidecar manifests
+benchmarks/         load-test scripts for the sidecar HTTP API
 ```
+
+The voice-agent reference demo lives in a sibling repo: [`provedex/demo-voice`](https://github.com/provedex/demo-voice).
 
 ## CLI
 
