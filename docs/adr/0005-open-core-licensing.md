@@ -76,9 +76,13 @@ Per `CLAUDE.md`, no AI-generated co-author trailers. DCO sign-off lines are allo
 
 ## What this does not change
 
-- `crates/provedex-core/Cargo.toml`, `crates/provedex-cli/Cargo.toml`, `crates/provedex-agent/Cargo.toml`, and `crates/provedex-server/Cargo.toml` already declare `license = "Apache-2.0"` via the workspace package. This ADR ratifies that, does not modify it.
+- `crates/provedex-core/Cargo.toml`, `crates/provedex-cli/Cargo.toml`, and `crates/provedex-agent/Cargo.toml` declare `license = "Apache-2.0"` via the workspace package. The demo crate (`provedex-server`) lives at `provedex/demo-voice` since 2026-05-08 and carries the same license. This ADR ratifies that, does not modify it.
 - The `LICENSE` file at the repo root is the Apache-2.0 license text. No change.
 - No future code goes under a license other than Apache-2.0 in this repo. Proprietary code lives in a separate private repo (`provedex/aggregator` or similar) when it lands.
+
+## Update 2026-05-08
+
+The voice-agent demo (`provedex-server`) and demo UI (`apps/demo-web/`) were extracted from this repository into a sibling repo, [`provedex/demo-voice`](https://github.com/provedex/demo-voice). The license is unchanged (Apache-2.0 forever) and the demo continues to consume `provedex-core` against the published `v0.1.0` tag. This is a relocation, not a relicensing; the open-core thesis in this ADR is unaffected.
 
 ## References
 

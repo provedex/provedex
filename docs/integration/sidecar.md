@@ -217,6 +217,10 @@ A green report (`status: valid`) means every event your app emitted is cryptogra
 
 If a verify run ever returns `status: broken`, the chain is broken; check whether something is writing to the ledger outside the sidecar.
 
+## See also: working voice-agent integration
+
+A complete dogfood lives at [`provedex/demo-voice`](https://github.com/provedex/demo-voice). It records audio in the browser, transcribes via whisper.cpp, calls a local Ollama model, signs every step against `provedex-core` v0.1.0 (consumed via git tag), and optionally speaks the reply via Piper. Useful as a worked example of how the sidecar fits into a real pipeline.
+
 ## Out of scope for v1
 
 - TLS support for non-loopback binds.
