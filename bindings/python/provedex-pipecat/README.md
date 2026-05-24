@@ -142,7 +142,7 @@ retained for at least six months; enforcement applies from August 2, 2026.
 The Colorado AI Act (effective February 1, 2026) requires deployers of
 high-risk AI systems to maintain records sufficient to demonstrate compliance
 with consumer protection obligations. HIPAA's audit-control safeguard
-(45 CFR SS164.312(b)) requires clinical voice agents to record and examine
+(45 CFR 164.312(b)) requires clinical voice agents to record and examine
 system activity, which for AI scribes means a verifiable transcript of every
 utterance processed. FINRA's 2026 examination priorities identify AI agent
 auditability as a focus area for broker-dealer supervision. A hash-chained,
