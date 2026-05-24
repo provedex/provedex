@@ -62,7 +62,10 @@ async def test_processor_dedup_same_frame_not_double_signed():
     await proc.handle_frame(frame)
     await proc.handle_frame(frame)  # same instance
 
-    # Without mocking agent: queue accepts first, second is filtered by dedup.
-    assert proc.signed_total + proc.dropped_total <= 1 + 0  # only 1 enqueued
+    # Exactly one enqueue: dedup blocks the second handle_frame call.
+    # The single enqueued event is either signed (if worker beat stop)
+    # or dropped (if connection refused before stop). Total = 1.
+    await proc._drain_with_timeout()
+    assert proc.signed_total + proc.dropped_total == 1
 
     await proc.stop()

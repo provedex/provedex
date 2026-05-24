@@ -78,7 +78,7 @@ class ProvedexFrameProcessor(FrameProcessor):
         await self._enqueue_for_frame(frame)
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
-        # Standard Pipecat hook. Always forward the frame; signing is side-effect.
+        """Standard Pipecat hook. Enqueues a sign and forwards the frame downstream."""
         await self._enqueue_for_frame(frame)
         await self.push_frame(frame, direction)
 
@@ -132,19 +132,27 @@ class ProvedexFrameProcessor(FrameProcessor):
                 await self._client.sign(event)
                 self.signed_total += 1
             except SignError as e:
+                if self._config.on_sign_failure == "raise":
+                    logger.error(
+                        "provedex sign failed (raise mode), worker stopping: %s", e
+                    )
+                    raise
                 self.dropped_total += 1
                 self._handle_sign_failure(e, event)
 
     def _handle_sign_failure(self, exc: SignError, event: dict[str, Any]) -> None:
         mode = self._config.on_sign_failure
-        if mode == "raise":
-            raise exc
         if mode == "warn":
-            logger.warning("provedex sign failed for %s: %s", event["type"], exc)
+            logger.warning(
+                "provedex sign failed for %s: %s",
+                event.get("type", "<unknown>"),
+                exc,
+            )
         # mode == "silent": no log
 
     async def _drain_with_timeout(self) -> None:
         deadline = time.monotonic() + self._config.shutdown_drain_seconds
         while self._queue and time.monotonic() < deadline:
             self._wakeup.set()
+            # yield to worker so it can drain the queue; do NOT use time.sleep here.
             await asyncio.sleep(0.01)
