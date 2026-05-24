@@ -148,3 +148,25 @@ jobs:
       - name: integration tests
         working-directory: bindings/python/provedex-pipecat
         run: pytest -v -m integration
+
+      - name: install langchain binding (dev deps)
+        working-directory: bindings/python/provedex-langchain
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: lint (ruff) langchain
+        working-directory: bindings/python/provedex-langchain
+        run: ruff check src tests
+
+      - name: typecheck (mypy) langchain
+        working-directory: bindings/python/provedex-langchain
+        run: mypy src
+
+      - name: unit tests (langchain)
+        working-directory: bindings/python/provedex-langchain
+        run: pytest -v -m "not integration"
+
+      - name: integration tests (langchain)
+        working-directory: bindings/python/provedex-langchain
+        run: pytest -v -m integration

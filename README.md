@@ -23,6 +23,7 @@ Provedex is the primitive underneath. Sign locally, chain locally, verify offlin
 | `provedex-cli` | `provedex` command-line tool: verify, replay, export | shipped |
 | `provedex-agent` | localhost HTTP signing daemon for non-Rust customers (default integration) | shipped |
 | `provedex-pipecat` (Python) | Pipecat `FrameProcessor` that signs every frame through the sidecar. PyPI. See [`bindings/python/provedex-pipecat/`](bindings/python/provedex-pipecat/README.md). | shipped |
+| `provedex-langchain` (Python) | LangChain `CallbackHandler` that signs every LLM and tool call via the sidecar. Covers LangGraph by inheritance. PyPI. See [`bindings/python/provedex-langchain/`](bindings/python/provedex-langchain/README.md). | shipped |
 
 Framework adapters that wrap the sidecar are the integration layer. Native FFI bindings (PyO3 / napi-rs) are a future optional fast-path; the sidecar covers every other language via localhost HTTP. See ADR 0004.
 
