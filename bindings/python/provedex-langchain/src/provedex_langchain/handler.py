@@ -6,6 +6,7 @@ import asyncio
 import logging
 import time
 from collections import deque
+from collections.abc import Iterator
 from typing import Any
 from uuid import UUID
 
@@ -38,7 +39,7 @@ class _Awaitable:
 
     __slots__ = ()
 
-    def __await__(self):
+    def __await__(self) -> Iterator[None]:
         return iter(())
 
 
@@ -134,6 +135,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
         run_id: UUID,
         **kwargs: Any,
     ) -> "_Awaitable":
+        """Buffer LLM start by run_id; returns no-op awaitable for async callers."""
         model_id = self._derive_model_id(serialized)
         self._state.buffer_llm_start(
             run_id, model_id=model_id, prompt_payload=prompts
@@ -148,6 +150,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
         run_id: UUID,
         **kwargs: Any,
     ) -> "_Awaitable":
+        """Buffer chat model start by run_id; flattens messages into role/content dicts."""
         model_id = self._derive_model_id(serialized)
         flattened = [
             {"type": m.type, "content": m.content}
@@ -162,12 +165,14 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
     def on_llm_end(  # type: ignore[override]
         self, response: LLMResult, *, run_id: UUID, **kwargs: Any
     ) -> "_Awaitable":
+        """Pair with buffered start and emit a ModelInvoked event."""
         self._emit_model_invoked(run_id, response)
         return _DONE
 
     def on_llm_error(  # type: ignore[override]
         self, error: BaseException, *, run_id: UUID, **kwargs: Any
     ) -> "_Awaitable":
+        """Pair with buffered start and emit ModelInvoked with the error description."""
         self._emit_model_invoked_error(run_id, error)
         return _DONE
 
@@ -180,6 +185,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
         inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> "_Awaitable":
+        """Buffer tool start by run_id and emit a ToolCalled event."""
         tool_name = serialized.get("name", "unknown")
         args = inputs if inputs is not None else input_str
         self._state.buffer_tool_start(run_id, tool_name=tool_name, args=args)
@@ -189,12 +195,14 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
     def on_tool_end(  # type: ignore[override]
         self, output: Any, *, run_id: UUID, **kwargs: Any
     ) -> "_Awaitable":
+        """Pair with buffered start and emit a ToolReturned event with success=True."""
         self._emit_tool_returned(run_id, output, success=True)
         return _DONE
 
     def on_tool_error(  # type: ignore[override]
         self, error: BaseException, *, run_id: UUID, **kwargs: Any
     ) -> "_Awaitable":
+        """Pair with buffered start and emit a ToolReturned event with success=False."""
         description = f"{type(error).__name__}: {error}"
         self._emit_tool_returned(run_id, description, success=False)
         return _DONE
@@ -237,6 +245,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
     def _emit_model_invoked_error(self, run_id: UUID, error: BaseException) -> None:
         snap = self._state.take_llm(run_id)
         if snap is None:
+            logger.warning("on_llm_error without prior on_llm_start (run_id=%s)", run_id)
             return
         description = f"{type(error).__name__}: {error}"
         self._enqueue(
