@@ -17,13 +17,14 @@ Provedex is the primitive underneath. Sign locally, chain locally, verify offlin
 
 ## Components
 
-| Crate | Role | Status |
-|-------|------|--------|
+| Crate / package | Role | Status |
+|------------------|------|--------|
 | `provedex-core` | signing primitives, hash chain, NDJSON ledger, export bundle | shipped |
 | `provedex-cli` | `provedex` command-line tool: verify, replay, export | shipped |
 | `provedex-agent` | localhost HTTP signing daemon for non-Rust customers (default integration) | shipped |
+| `provedex-pipecat` (Python) | Pipecat `FrameProcessor` that signs every frame through the sidecar. PyPI. See [`bindings/python/provedex-pipecat/`](bindings/python/provedex-pipecat/README.md). | shipped |
 
-Native bindings (Python, Node) are planned as optional fast-paths; the sidecar covers every other language via localhost HTTP. See ADR 0004.
+Framework adapters that wrap the sidecar are the integration layer. Native FFI bindings (PyO3 / napi-rs) are a future optional fast-path; the sidecar covers every other language via localhost HTTP. See ADR 0004.
 
 The reference voice-agent integration (whisper.cpp + Ollama + Piper) lives in its own repo at [provedex/demo-voice](https://github.com/provedex/demo-voice). It dogfoods this SDK against the published `v0.1.0` tag.
 
