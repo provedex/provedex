@@ -1,10 +1,10 @@
 import json
 from collections import Counter
+from uuid import uuid4
 
 import httpx
 import pytest
 import respx
-from uuid import uuid4
 
 from provedex_langchain import ProvedexCallbackHandler, ProvedexConfig
 
@@ -140,4 +140,6 @@ async def test_sync_llm_error_emits_model_invoked_with_error():
     payload = next(body for body in posted if body["event"]["type"] == "ModelInvoked")["event"][
         "payload"
     ]
-    assert "RuntimeError" in payload.get("response_sha256", "") or True  # response_sha256 hashes the error description; can't assert content without recomputing - just assert the event fired
+    # response_sha256 hashes the error description; the test asserts that
+    # the ModelInvoked event fired with a populated response_sha256.
+    assert payload["response_sha256"]

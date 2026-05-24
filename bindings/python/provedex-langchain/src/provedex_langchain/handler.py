@@ -111,7 +111,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
         """Emit a SessionEnded event."""
         self._enqueue(session_ended_event(reason=reason))
 
-    def session(self, reason: str = "operator_session") -> "_SessionContext":
+    def session(self, reason: str = "operator_session") -> _SessionContext:
         """Return a context manager that wraps a session lifecycle.
 
         Both `with handler.session(reason):` and
@@ -134,7 +134,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
         *,
         run_id: UUID,
         **kwargs: Any,
-    ) -> "_Awaitable":
+    ) -> _Awaitable:
         """Buffer LLM start by run_id; returns no-op awaitable for async callers."""
         model_id = self._derive_model_id(serialized)
         self._state.buffer_llm_start(
@@ -149,7 +149,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
         *,
         run_id: UUID,
         **kwargs: Any,
-    ) -> "_Awaitable":
+    ) -> _Awaitable:
         """Buffer chat model start by run_id; flattens messages into role/content dicts."""
         model_id = self._derive_model_id(serialized)
         flattened = [
@@ -164,14 +164,14 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
 
     def on_llm_end(  # type: ignore[override]
         self, response: LLMResult, *, run_id: UUID, **kwargs: Any
-    ) -> "_Awaitable":
+    ) -> _Awaitable:
         """Pair with buffered start and emit a ModelInvoked event."""
         self._emit_model_invoked(run_id, response)
         return _DONE
 
     def on_llm_error(  # type: ignore[override]
         self, error: BaseException, *, run_id: UUID, **kwargs: Any
-    ) -> "_Awaitable":
+    ) -> _Awaitable:
         """Pair with buffered start and emit ModelInvoked with the error description."""
         self._emit_model_invoked_error(run_id, error)
         return _DONE
@@ -184,7 +184,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
         run_id: UUID,
         inputs: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> "_Awaitable":
+    ) -> _Awaitable:
         """Buffer tool start by run_id and emit a ToolCalled event."""
         tool_name = serialized.get("name", "unknown")
         args = inputs if inputs is not None else input_str
@@ -194,14 +194,14 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
 
     def on_tool_end(  # type: ignore[override]
         self, output: Any, *, run_id: UUID, **kwargs: Any
-    ) -> "_Awaitable":
+    ) -> _Awaitable:
         """Pair with buffered start and emit a ToolReturned event with success=True."""
         self._emit_tool_returned(run_id, output, success=True)
         return _DONE
 
     def on_tool_error(  # type: ignore[override]
         self, error: BaseException, *, run_id: UUID, **kwargs: Any
-    ) -> "_Awaitable":
+    ) -> _Awaitable:
         """Pair with buffered start and emit a ToolReturned event with success=False."""
         description = f"{type(error).__name__}: {error}"
         self._emit_tool_returned(run_id, description, success=False)
@@ -215,7 +215,7 @@ class ProvedexCallbackHandler(AsyncCallbackHandler, BaseCallbackHandler):
         """
         path = serialized.get("id")
         if isinstance(path, list) and path:
-            return path[-1]
+            return str(path[-1])
         return self._config.model_id
 
     def _emit_model_invoked(self, run_id: UUID, response: LLMResult) -> None:
