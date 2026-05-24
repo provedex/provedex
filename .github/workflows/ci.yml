@@ -89,3 +89,62 @@ jobs:
 
       - name: cargo deny check
         run: cargo deny check
+
+  bindings-python:
+    name: bindings-python (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake clang
+
+      - name: install rust toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: cache cargo registry + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: ${{ runner.os }}-cargo-bindings-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-bindings-
+            ${{ runner.os }}-cargo-
+
+      - name: setup python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: bindings/python/provedex-pipecat/pyproject.toml
+
+      - name: build provedex-agent (release)
+        run: cargo build --release -p provedex-agent
+
+      - name: install binding with dev deps
+        working-directory: bindings/python/provedex-pipecat
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: lint (ruff)
+        working-directory: bindings/python/provedex-pipecat
+        run: ruff check src tests
+
+      - name: typecheck (mypy)
+        working-directory: bindings/python/provedex-pipecat
+        run: mypy src
+
+      - name: unit tests
+        working-directory: bindings/python/provedex-pipecat
+        run: pytest -v -m "not integration"
+
+      - name: integration tests
+        working-directory: bindings/python/provedex-pipecat
+        run: pytest -v -m integration
