@@ -69,7 +69,7 @@ class ProvedexFrameProcessor(FrameProcessor):
                     self._worker_task,
                     timeout=self._config.shutdown_drain_seconds,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._worker_task.cancel()
         await self._client.aclose()
 
@@ -123,7 +123,7 @@ class ProvedexFrameProcessor(FrameProcessor):
                 self._wakeup.clear()
                 try:
                     await asyncio.wait_for(self._wakeup.wait(), timeout=0.1)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
                 continue
 

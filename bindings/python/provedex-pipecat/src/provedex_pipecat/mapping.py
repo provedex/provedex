@@ -23,8 +23,8 @@ from pipecat.frames.frames import (
     TranscriptionFrame,
 )
 
-from .config import ProvedexConfig
 from ._state import CorrelationState
+from .config import ProvedexConfig
 
 
 def _sha256_hex(b: bytes) -> str:
