@@ -7,7 +7,8 @@ from pathlib import Path
 import httpx
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[4]  # tests -> provedex-pipecat -> python -> bindings -> repo
+# tests -> provedex-pipecat -> python -> bindings -> repo
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
 def _free_port() -> int:

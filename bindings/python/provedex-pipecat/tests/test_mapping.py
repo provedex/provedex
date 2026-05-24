@@ -14,8 +14,8 @@ from pipecat.frames.frames import (
     TranscriptionFrame,
 )
 
-from provedex_pipecat.config import ProvedexConfig
 from provedex_pipecat._state import CorrelationState
+from provedex_pipecat.config import ProvedexConfig
 from provedex_pipecat.mapping import frame_to_event
 
 
@@ -62,7 +62,12 @@ def test_end_frame_maps_to_session_ended(config, state):
 
 
 def test_transcription_frame_maps_to_utterance_captured(config, state):
-    frame = TranscriptionFrame(text="hello world", user_id="u1", timestamp="2026-05-24T00:00:00Z", language="en-US")
+    frame = TranscriptionFrame(
+        text="hello world",
+        user_id="u1",
+        timestamp="2026-05-24T00:00:00Z",
+        language="en-US",
+    )
     event = frame_to_event(frame, config, state)
     assert event["type"] == "UtteranceCaptured"
     assert event["payload"]["transcript"] == "hello world"
@@ -81,7 +86,9 @@ def test_function_call_in_progress_maps_to_tool_called(config, state):
     assert event["type"] == "ToolCalled"
     assert event["payload"]["tool_name"] == "get_weather"
     assert event["payload"]["args_redacted"] == {"city": "NYC"}
-    expected_args_hash = _sha256_hex(json.dumps({"city": "NYC"}, sort_keys=True, separators=(",", ":")).encode())
+    expected_args_hash = _sha256_hex(
+        json.dumps({"city": "NYC"}, sort_keys=True, separators=(",", ":")).encode()
+    )
     assert event["payload"]["args_sha256"] == expected_args_hash
 
 
