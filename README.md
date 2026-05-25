@@ -59,6 +59,15 @@ cargo install --locked --git https://github.com/provedex/provedex --bin provedex
 
 See [`deploy/`](deploy/) for ready-to-adapt manifests.
 
+### Python bindings (PyPI)
+
+```bash
+pip install provedex-pipecat      # Pipecat voice agents
+pip install provedex-langchain    # LangChain + LangGraph
+```
+
+Both packages POST to the local `provedex-agent` sidecar. Run the agent first, then wire the binding into your pipeline. See the per-package READMEs for a five-line quickstart.
+
 ## Quickstart - sidecar
 
 The sidecar is the default integration path for any non-Rust app.
