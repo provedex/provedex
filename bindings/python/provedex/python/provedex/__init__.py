@@ -10,6 +10,7 @@ from ._provedex import (
     LedgerError,
     ProvedexError,
     SigningError,
+    SigningKeypair,
     __version__,
 )
 
@@ -19,5 +20,6 @@ __all__ = [
     "LedgerError",
     "ProvedexError",
     "SigningError",
+    "SigningKeypair",
     "__version__",
 ]

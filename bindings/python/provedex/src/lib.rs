@@ -6,10 +6,12 @@
 use pyo3::prelude::*;
 
 mod errors;
+mod keypair;
 
 #[pymodule]
 fn _provedex(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     errors::register(m)?;
+    m.add_class::<keypair::SigningKeypair>()?;
     Ok(())
 }
