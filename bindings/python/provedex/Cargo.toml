@@ -1,0 +1,26 @@
+[package]
+name = "provedex-python"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/provedex/provedex"
+publish = false
+
+# Empty [workspace] makes this crate its own workspace root. Without it, cargo
+# walks up, finds the repo-root workspace, and errors because this package is
+# not in its `members` list. The crates rules forbid FFI inside a crates/
+# member, so this binding stays decoupled with its own Cargo.lock.
+[workspace]
+
+[lib]
+name = "_provedex"
+crate-type = ["cdylib"]
+
+[dependencies]
+provedex-core = { path = "../../../crates/provedex-core" }
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py311"] }
+pythonize = "0.22"
+serde_json = "1.0"
+
+[profile.release]
+strip = true
