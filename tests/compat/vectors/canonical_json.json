@@ -1,0 +1,55 @@
+[
+  {
+    "name": "sorted_keys",
+    "input": {
+      "b": 1,
+      "a": 2,
+      "c": 3
+    },
+    "expected": "{\"a\":2,\"b\":1,\"c\":3}"
+  },
+  {
+    "name": "nested_array",
+    "input": {
+      "c": [
+        3,
+        2,
+        1
+      ],
+      "a": 2
+    },
+    "expected": "{\"a\":2,\"c\":[3,2,1]}"
+  },
+  {
+    "name": "control_chars",
+    "input": {
+      "k": "line1\nline2\t\"end\""
+    },
+    "expected": "{\"k\":\"line1\\nline2\\t\\\"end\\\"\"}"
+  },
+  {
+    "name": "non_ascii_raw_utf8",
+    "input": {
+      "k": "café ✅ 🔒"
+    },
+    "expected": "{\"k\":\"café ✅ 🔒\"}"
+  },
+  {
+    "name": "ints_and_bools",
+    "input": {
+      "n": 42,
+      "z": 0,
+      "flag": true,
+      "nil": null
+    },
+    "expected": "{\"flag\":true,\"n\":42,\"nil\":null,\"z\":0}"
+  },
+  {
+    "name": "empty_object_and_array",
+    "input": {
+      "o": {},
+      "a": []
+    },
+    "expected": "{\"a\":[],\"o\":{}}"
+  }
+]

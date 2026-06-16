@@ -90,6 +90,16 @@ impl SigningKeypair {
     }
 }
 
+impl Clone for SigningKeypair {
+    fn clone(&self) -> Self {
+        // Reconstruct from the raw secret bytes; cheaper and version-proof
+        // versus relying on a derived Clone in the dalek type.
+        Self {
+            signing: SigningKey::from_bytes(&self.signing.to_bytes()),
+        }
+    }
+}
+
 pub fn verify_signature(
     pubkey_hex: &str,
     message: &[u8],
@@ -169,5 +179,15 @@ mod tests {
         let first = SigningKeypair::load_or_create(&path).unwrap();
         let second = SigningKeypair::load_or_create(&path).unwrap();
         assert_eq!(first.pubkey_hex(), second.pubkey_hex());
+    }
+
+    #[test]
+    fn clone_preserves_identity() {
+        let kp = SigningKeypair::generate();
+        let cloned = kp.clone();
+        assert_eq!(kp.pubkey_hex(), cloned.pubkey_hex());
+        let msg = b"same key signs the same";
+        let sig = hex::encode(cloned.sign(msg).to_bytes());
+        assert!(verify_signature(&kp.pubkey_hex(), msg, &sig).is_ok());
     }
 }

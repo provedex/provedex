@@ -1,0 +1,67 @@
+name: release-python
+
+on:
+  push:
+    tags:
+      - "python-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-wheels:
+    name: build wheels (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64
+            manylinux: "2014"
+          - runner: ubuntu-latest
+            target: aarch64
+            manylinux: "2014"
+          - runner: macos-14
+            target: aarch64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: bindings/python/provedex
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --out dist
+
+      - name: upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.runner }}-${{ matrix.target }}
+          path: bindings/python/provedex/dist/*.whl
+
+  build-sdist:
+    name: build sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: bindings/python/provedex
+          command: sdist
+          args: --out dist
+
+      - name: upload sdist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: bindings/python/provedex/dist/*.tar.gz
