@@ -4,6 +4,20 @@ Signs Ed25519, hash-chained agent evidence in-process, byte-identical to the
 Rust reference. See https://github.com/provedex/provedex.
 """
 
-from ._provedex import __version__
+from ._provedex import (
+    ChainError,
+    KeyLoadError,
+    LedgerError,
+    ProvedexError,
+    SigningError,
+    __version__,
+)
 
-__all__ = ["__version__"]
+__all__ = [
+    "ChainError",
+    "KeyLoadError",
+    "LedgerError",
+    "ProvedexError",
+    "SigningError",
+    "__version__",
+]
