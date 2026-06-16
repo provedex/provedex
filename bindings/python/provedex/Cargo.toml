@@ -23,5 +23,16 @@ pyo3 = { version = "0.22", features = ["extension-module", "abi3-py311"] }
 pythonize = "0.22"
 serde_json = "1.0"
 
+# Both lints below fire only on PyO3 0.22 macro-generated code, not on our
+# source: create_exception! emits a cfg(feature = "gil-refs") check, and the
+# #[pyfunction]/#[pymethods] wrappers emit a PyErr -> PyErr .into(). Declaring
+# gil-refs as a known cfg silences the first; allowing useless_conversion
+# silences the second. Revisit when PyO3 drops the gil-refs transition shims.
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("gil-refs"))'] }
+
+[lints.clippy]
+useless_conversion = "allow"
+
 [profile.release]
 strip = true
