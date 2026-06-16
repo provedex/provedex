@@ -8,6 +8,7 @@ use pyo3::prelude::*;
 mod errors;
 mod events;
 mod keypair;
+mod session;
 mod signed;
 
 #[pymodule]
@@ -17,5 +18,6 @@ fn _provedex(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<keypair::SigningKeypair>()?;
     events::build(m)?;
     signed::register(m)?;
+    session::register(m)?;
     Ok(())
 }
