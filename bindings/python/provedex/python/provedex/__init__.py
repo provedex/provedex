@@ -12,6 +12,7 @@ from ._provedex import (
     SigningError,
     SigningKeypair,
     __version__,
+    events,
 )
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "SigningError",
     "SigningKeypair",
     "__version__",
+    "events",
 ]
