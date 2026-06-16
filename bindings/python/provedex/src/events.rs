@@ -38,7 +38,11 @@ impl AgentEvent {
 #[pyfunction]
 fn session_started(agent_id: String, model_id: String, session_id: String) -> AgentEvent {
     AgentEvent {
-        inner: CoreEvent::SessionStarted { agent_id, model_id, session_id },
+        inner: CoreEvent::SessionStarted {
+            agent_id,
+            model_id,
+            session_id,
+        },
     }
 }
 
@@ -50,7 +54,12 @@ fn utterance_captured(
     duration_ms: u64,
 ) -> AgentEvent {
     AgentEvent {
-        inner: CoreEvent::UtteranceCaptured { audio_sha256, transcript, lang, duration_ms },
+        inner: CoreEvent::UtteranceCaptured {
+            audio_sha256,
+            transcript,
+            lang,
+            duration_ms,
+        },
     }
 }
 
@@ -63,7 +72,11 @@ fn tool_called(
     let args_redacted = depythonize(&args_redacted)
         .map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
     Ok(AgentEvent {
-        inner: CoreEvent::ToolCalled { tool_name, args_sha256, args_redacted },
+        inner: CoreEvent::ToolCalled {
+            tool_name,
+            args_sha256,
+            args_redacted,
+        },
     })
 }
 
@@ -75,7 +88,12 @@ fn tool_returned(
     success: bool,
 ) -> AgentEvent {
     AgentEvent {
-        inner: CoreEvent::ToolReturned { tool_name, result_sha256, latency_ms, success },
+        inner: CoreEvent::ToolReturned {
+            tool_name,
+            result_sha256,
+            latency_ms,
+            success,
+        },
     }
 }
 
@@ -101,14 +119,21 @@ fn model_invoked(
 #[pyfunction]
 fn utterance_spoken(text_sha256: String, text: String, audio_sha256: String) -> AgentEvent {
     AgentEvent {
-        inner: CoreEvent::UtteranceSpoken { text_sha256, text, audio_sha256 },
+        inner: CoreEvent::UtteranceSpoken {
+            text_sha256,
+            text,
+            audio_sha256,
+        },
     }
 }
 
 #[pyfunction]
 fn session_ended(reason: String, summary_sha256: String) -> AgentEvent {
     AgentEvent {
-        inner: CoreEvent::SessionEnded { reason, summary_sha256 },
+        inner: CoreEvent::SessionEnded {
+            reason,
+            summary_sha256,
+        },
     }
 }
 
@@ -116,8 +141,8 @@ fn session_ended(reason: String, summary_sha256: String) -> AgentEvent {
 /// any shape that is not one of the seven core variants.
 #[pyfunction]
 fn from_dict(value: Bound<'_, PyAny>) -> PyResult<AgentEvent> {
-    let json: serde_json::Value = depythonize(&value)
-        .map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
+    let json: serde_json::Value =
+        depythonize(&value).map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
     let inner: CoreEvent = serde_json::from_value(json)
         .map_err(|e| signed_err(provedex_core::SignedError::Json(e)))?;
     Ok(AgentEvent { inner })

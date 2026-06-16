@@ -5,11 +5,36 @@ use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
-create_exception!(provedex, ProvedexError, PyException, "Base class for all Provedex errors.");
-create_exception!(provedex, KeyLoadError, ProvedexError, "Keypair load or save failure.");
-create_exception!(provedex, SigningError, ProvedexError, "Event seal or hash failure.");
-create_exception!(provedex, LedgerError, ProvedexError, "Ledger read or write failure.");
-create_exception!(provedex, ChainError, ProvedexError, "Malformed verification input.");
+create_exception!(
+    provedex,
+    ProvedexError,
+    PyException,
+    "Base class for all Provedex errors."
+);
+create_exception!(
+    provedex,
+    KeyLoadError,
+    ProvedexError,
+    "Keypair load or save failure."
+);
+create_exception!(
+    provedex,
+    SigningError,
+    ProvedexError,
+    "Event seal or hash failure."
+);
+create_exception!(
+    provedex,
+    LedgerError,
+    ProvedexError,
+    "Ledger read or write failure."
+);
+create_exception!(
+    provedex,
+    ChainError,
+    ProvedexError,
+    "Malformed verification input."
+);
 
 pub(crate) fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let py = m.py();

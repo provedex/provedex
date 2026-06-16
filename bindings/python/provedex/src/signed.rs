@@ -72,7 +72,10 @@ impl SignedEvent {
     }
 
     fn __repr__(&self) -> String {
-        format!("SignedEvent(seq={}, self_hash='{}')", self.inner.seq, self.inner.self_hash)
+        format!(
+            "SignedEvent(seq={}, self_hash='{}')",
+            self.inner.seq, self.inner.self_hash
+        )
     }
 }
 
@@ -101,8 +104,8 @@ fn compute_self_hash(
     event: &AgentEvent,
     parent_hash: &str,
 ) -> PyResult<String> {
-    let bytes = core_self_hash(seq, timestamp_nanos, &event.inner, parent_hash)
-        .map_err(signed_err)?;
+    let bytes =
+        core_self_hash(seq, timestamp_nanos, &event.inner, parent_hash).map_err(signed_err)?;
     Ok(hex::encode(bytes))
 }
 

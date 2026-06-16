@@ -27,8 +27,8 @@ impl Session {
     #[pyo3(signature = (*, keypair, ledger_path, session_id))]
     fn open(keypair: &SigningKeypair, ledger_path: PathBuf, session_id: String) -> PyResult<Self> {
         let ledger = Ledger::open(ledger_path).map_err(ledger_err)?;
-        let inner = LedgerSession::open(keypair.inner.clone(), ledger, session_id)
-            .map_err(session_err)?;
+        let inner =
+            LedgerSession::open(keypair.inner.clone(), ledger, session_id).map_err(session_err)?;
         Ok(Self { inner })
     }
 

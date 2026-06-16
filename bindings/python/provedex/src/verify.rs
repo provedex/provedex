@@ -5,7 +5,9 @@ use std::path::PathBuf;
 
 use pyo3::prelude::*;
 
-use provedex_core::{read_file, verify_chain as core_verify, ChainReport as CoreReport, ChainStatus};
+use provedex_core::{
+    read_file, verify_chain as core_verify, ChainReport as CoreReport, ChainStatus,
+};
 
 use crate::errors::ledger_err;
 use crate::signed::SignedEvent;

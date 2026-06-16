@@ -9,8 +9,8 @@ use pythonize::depythonize;
 /// no whitespace, fixed escapes, non-ASCII as raw UTF-8.
 #[pyfunction]
 fn canonical_json<'py>(value: Bound<'py, PyAny>, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
-    let json: serde_json::Value = depythonize(&value)
-        .map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
+    let json: serde_json::Value =
+        depythonize(&value).map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
     let bytes = provedex_core::canonical_json(&json);
     Ok(PyBytes::new_bound(py, &bytes))
 }
