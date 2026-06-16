@@ -34,9 +34,6 @@ impl Session {
 
     /// Seal `event`, append it to the ledger, and return the SignedEvent.
     ///
-    /// Safe to call from multiple threads on one Session; the core serializes
-    /// each seal and append.
-    ///
     /// This call fsyncs the ledger before returning (durability), which costs a
     /// few milliseconds. On an async backend, wrap it in `asyncio.to_thread`.
     fn record(&self, event: &AgentEvent, py: Python<'_>) -> PyResult<SignedEvent> {
