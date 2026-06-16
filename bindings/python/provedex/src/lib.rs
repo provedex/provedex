@@ -5,6 +5,7 @@
 
 use pyo3::prelude::*;
 
+mod canonical;
 mod errors;
 mod events;
 mod keypair;
@@ -21,5 +22,6 @@ fn _provedex(m: &Bound<'_, PyModule>) -> PyResult<()> {
     signed::register(m)?;
     session::register(m)?;
     verify::register(m)?;
+    canonical::register(m)?;
     Ok(())
 }
