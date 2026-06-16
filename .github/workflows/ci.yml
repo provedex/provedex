@@ -216,12 +216,17 @@ jobs:
       - name: build provedex CLI (for cross-verify)
         run: cargo build --release -p provedex-cli
 
-      - name: install binding (editable, dev deps) + build extension
+      # maturin develop needs an active virtualenv; create one and put it on
+      # PATH so the ruff/mypy/pytest steps below resolve the venv-installed
+      # tools and the binding it builds.
+      - name: create venv, install binding (editable, dev deps), build extension
         working-directory: bindings/python/provedex
         run: |
-          python -m pip install --upgrade pip maturin
-          pip install -e ".[dev]"
-          maturin develop
+          python -m venv .venv
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          .venv/bin/pip install --upgrade pip maturin
+          .venv/bin/pip install -e ".[dev]"
+          .venv/bin/maturin develop
 
       - name: lint (ruff)
         working-directory: bindings/python/provedex
