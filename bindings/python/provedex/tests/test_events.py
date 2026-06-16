@@ -1,6 +1,5 @@
-import pytest
-
 import provedex
+import pytest
 
 
 def test_each_factory_builds_an_event():

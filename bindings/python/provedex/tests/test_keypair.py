@@ -1,6 +1,5 @@
-import pytest
-
 import provedex
+import pytest
 
 
 def test_generate_has_64_hex_pubkey():

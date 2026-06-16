@@ -1,10 +1,10 @@
 from collections.abc import Mapping
 from typing import Any
 
+from . import events as events
+
 __version__: str
 GENESIS_PARENT_HASH: str
-
-from . import events as events
 
 class SigningKeypair:
     @staticmethod
@@ -67,7 +67,9 @@ def compute_self_hash(
 ) -> str: ...
 def verify_chain(events: list[SignedEvent]) -> ChainReport: ...
 def verify_file(path: str) -> ChainReport: ...
-def canonical_json(value: Mapping[str, Any] | list[Any] | str | int | float | bool | None) -> bytes: ...
+def canonical_json(
+    value: Mapping[str, Any] | list[Any] | str | int | float | bool | None,
+) -> bytes: ...
 
 class ProvedexError(Exception): ...
 class KeyLoadError(ProvedexError): ...

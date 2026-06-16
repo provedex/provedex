@@ -11,7 +11,7 @@ def test_nested_arrays_preserved_in_order():
 
 def test_non_ascii_passes_through_as_raw_utf8():
     # The Rust encoder does NOT \u-escape non-ASCII; it emits raw UTF-8 bytes.
-    assert provedex.canonical_json({"k": "café"}) == '{"k":"café"}'.encode("utf-8")
+    assert provedex.canonical_json({"k": "café"}) == '{"k":"café"}'.encode()
 
 
 def test_control_chars_escaped():
