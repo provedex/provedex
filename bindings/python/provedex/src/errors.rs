@@ -59,6 +59,11 @@ pub(crate) fn ledger_err(e: provedex_core::LedgerError) -> PyErr {
 }
 
 pub(crate) fn session_err(e: provedex_core::SessionError) -> PyErr {
-    // SessionError wraps either a ledger or a signed error; surface the text.
-    SigningError::new_err(e.to_string())
+    // SessionError wraps either a ledger or a signed error; map each to the
+    // matching Python class so a disk failure during record() surfaces as
+    // LedgerError, not SigningError.
+    match e {
+        provedex_core::SessionError::Ledger(le) => ledger_err(le),
+        provedex_core::SessionError::Signed(se) => signed_err(se),
+    }
 }

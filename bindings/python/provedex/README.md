@@ -15,9 +15,11 @@ Pre-built wheels ship for cpython 3.11+ on Linux x86_64, Linux aarch64, and macO
 ## Quickstart
 
 ```python
+import os
+
 import provedex
 
-keypair = provedex.SigningKeypair.load_or_create("~/.provedex/keys/ed25519.key")
+keypair = provedex.SigningKeypair.load_or_create(os.path.expanduser("~/.provedex/keys/ed25519.key"))
 session = provedex.Session.open(
     keypair=keypair, ledger_path="./ledger.ndjson", session_id="conversation-42"
 )
@@ -95,6 +97,8 @@ All failures raise; nothing returns an error sentinel.
 ## Byte-compat
 
 There is one canonical-JSON encoder in the whole system: the Rust one. This binding calls it directly, so the bytes it signs are identical to the sidecar and the CLI. The repo's `tests/compat/vectors/` golden suite and the cross-verify tests assert it.
+
+JSON numbers follow the Rust reference exactly: an integer and a float are distinct (`1` and `1.0` hash differently), and non-finite floats (NaN, Infinity) are rejected rather than silently coerced.
 
 ## Verifying offline
 

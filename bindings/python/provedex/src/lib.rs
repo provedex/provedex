@@ -6,6 +6,7 @@
 use pyo3::prelude::*;
 
 mod canonical;
+mod convert;
 mod errors;
 mod events;
 mod keypair;

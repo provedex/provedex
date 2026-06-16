@@ -4,7 +4,6 @@
 
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
-use pythonize::depythonize;
 
 use provedex_core::AgentEvent as CoreEvent;
 
@@ -40,6 +39,7 @@ impl AgentEvent {
 }
 
 #[pyfunction]
+#[pyo3(signature = (*, agent_id, model_id, session_id))]
 fn session_started(agent_id: String, model_id: String, session_id: String) -> AgentEvent {
     AgentEvent {
         inner: CoreEvent::SessionStarted {
@@ -51,6 +51,7 @@ fn session_started(agent_id: String, model_id: String, session_id: String) -> Ag
 }
 
 #[pyfunction]
+#[pyo3(signature = (*, audio_sha256, transcript, lang, duration_ms))]
 fn utterance_captured(
     audio_sha256: String,
     transcript: String,
@@ -68,13 +69,13 @@ fn utterance_captured(
 }
 
 #[pyfunction]
+#[pyo3(signature = (*, tool_name, args_sha256, args_redacted))]
 fn tool_called(
     tool_name: String,
     args_sha256: String,
     args_redacted: Bound<'_, PyAny>,
 ) -> PyResult<AgentEvent> {
-    let args_redacted = depythonize(&args_redacted)
-        .map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
+    let args_redacted = crate::convert::depythonize_finite(&args_redacted)?;
     Ok(AgentEvent {
         inner: CoreEvent::ToolCalled {
             tool_name,
@@ -85,6 +86,7 @@ fn tool_called(
 }
 
 #[pyfunction]
+#[pyo3(signature = (*, tool_name, result_sha256, latency_ms, success))]
 fn tool_returned(
     tool_name: String,
     result_sha256: String,
@@ -102,6 +104,7 @@ fn tool_returned(
 }
 
 #[pyfunction]
+#[pyo3(signature = (*, model_id, prompt_sha256, response_sha256, prompt_tokens, response_tokens))]
 fn model_invoked(
     model_id: String,
     prompt_sha256: String,
@@ -121,6 +124,7 @@ fn model_invoked(
 }
 
 #[pyfunction]
+#[pyo3(signature = (*, text_sha256, text, audio_sha256))]
 fn utterance_spoken(text_sha256: String, text: String, audio_sha256: String) -> AgentEvent {
     AgentEvent {
         inner: CoreEvent::UtteranceSpoken {
@@ -132,6 +136,7 @@ fn utterance_spoken(text_sha256: String, text: String, audio_sha256: String) -> 
 }
 
 #[pyfunction]
+#[pyo3(signature = (*, reason, summary_sha256))]
 fn session_ended(reason: String, summary_sha256: String) -> AgentEvent {
     AgentEvent {
         inner: CoreEvent::SessionEnded {
@@ -145,8 +150,7 @@ fn session_ended(reason: String, summary_sha256: String) -> AgentEvent {
 /// any shape that is not one of the seven core variants.
 #[pyfunction]
 fn from_dict(value: Bound<'_, PyAny>) -> PyResult<AgentEvent> {
-    let json: serde_json::Value =
-        depythonize(&value).map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
+    let json: serde_json::Value = crate::convert::depythonize_finite(&value)?;
     let inner: CoreEvent = serde_json::from_value(json)
         .map_err(|e| signed_err(provedex_core::SignedError::Json(e)))?;
     Ok(AgentEvent { inner })

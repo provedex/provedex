@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use pyo3::prelude::*;
 
+use provedex_core::LedgerError as CoreLedgerError;
 use provedex_core::{
     read_file, verify_chain as core_verify, ChainReport as CoreReport, ChainStatus,
 };
@@ -81,7 +82,12 @@ fn verify_chain(events: Vec<Py<SignedEvent>>, py: Python<'_>) -> ChainReport {
 /// empty, valid chain (event_count = 0).
 #[pyfunction]
 fn verify_file(path: PathBuf) -> PyResult<ChainReport> {
-    let events = read_file(path).map_err(ledger_err)?;
+    let events = read_file(path).map_err(|e| match e {
+        CoreLedgerError::Json(je) => {
+            crate::errors::ChainError::new_err(format!("malformed ledger input: {je}"))
+        }
+        other => ledger_err(other),
+    })?;
     Ok(ChainReport {
         inner: core_verify(&events),
     })
