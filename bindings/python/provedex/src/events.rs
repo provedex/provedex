@@ -12,7 +12,11 @@ use crate::errors::signed_err;
 
 /// Opaque handle around a provedex-core AgentEvent. Built only via the factory
 /// functions or from_dict; Python never constructs the tagged JSON by hand.
-#[pyclass]
+// skip_from_py_object: this handle is only ever passed by reference (&AgentEvent),
+// never extracted by value, so the Clone-derived FromPyObject impl is unused. In
+// pyo3 0.29 that impl became opt-in; opting out keeps behavior and silences the
+// deprecation.
+#[pyclass(skip_from_py_object)]
 #[derive(Clone)]
 pub struct AgentEvent {
     pub(crate) inner: CoreEvent,
@@ -150,7 +154,7 @@ fn from_dict(value: Bound<'_, PyAny>) -> PyResult<AgentEvent> {
 
 pub(crate) fn build(parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let py = parent.py();
-    let m = PyModule::new_bound(py, "events")?;
+    let m = PyModule::new(py, "events")?;
     m.add_class::<AgentEvent>()?;
     m.add_function(wrap_pyfunction!(session_started, &m)?)?;
     m.add_function(wrap_pyfunction!(utterance_captured, &m)?)?;
@@ -163,7 +167,7 @@ pub(crate) fn build(parent: &Bound<'_, PyModule>) -> PyResult<()> {
     parent.add_submodule(&m)?;
     // Register in sys.modules so `import provedex.events` resolves, not just
     // attribute access through the parent package.
-    py.import_bound("sys")?
+    py.import("sys")?
         .getattr("modules")?
         .set_item("provedex.events", &m)?;
     Ok(())

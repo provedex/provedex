@@ -12,7 +12,7 @@ fn canonical_json<'py>(value: Bound<'py, PyAny>, py: Python<'py>) -> PyResult<Bo
     let json: serde_json::Value =
         depythonize(&value).map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
     let bytes = provedex_core::canonical_json(&json);
-    Ok(PyBytes::new_bound(py, &bytes))
+    Ok(PyBytes::new(py, &bytes))
 }
 
 pub(crate) fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {

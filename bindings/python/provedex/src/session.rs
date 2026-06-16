@@ -39,7 +39,7 @@ impl Session {
     fn record(&self, event: &AgentEvent, py: Python<'_>) -> PyResult<SignedEvent> {
         // Release the GIL across the seal + fsync so other Python threads run.
         let signed = py
-            .allow_threads(|| self.inner.seal_and_append(event.inner.clone()))
+            .detach(|| self.inner.seal_and_append(event.inner.clone()))
             .map_err(session_err)?;
         Ok(SignedEvent::wrap(signed))
     }

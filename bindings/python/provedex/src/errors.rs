@@ -38,11 +38,11 @@ create_exception!(
 
 pub(crate) fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let py = m.py();
-    m.add("ProvedexError", py.get_type_bound::<ProvedexError>())?;
-    m.add("KeyLoadError", py.get_type_bound::<KeyLoadError>())?;
-    m.add("SigningError", py.get_type_bound::<SigningError>())?;
-    m.add("LedgerError", py.get_type_bound::<LedgerError>())?;
-    m.add("ChainError", py.get_type_bound::<ChainError>())?;
+    m.add("ProvedexError", py.get_type::<ProvedexError>())?;
+    m.add("KeyLoadError", py.get_type::<KeyLoadError>())?;
+    m.add("SigningError", py.get_type::<SigningError>())?;
+    m.add("LedgerError", py.get_type::<LedgerError>())?;
+    m.add("ChainError", py.get_type::<ChainError>())?;
     Ok(())
 }
 

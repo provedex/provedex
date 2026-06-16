@@ -36,12 +36,11 @@ impl SignedEvent {
 
     /// The event as its tagged `{"type", "payload"}` mapping.
     #[getter]
-    fn event(&self, py: Python<'_>) -> PyResult<PyObject> {
+    fn event<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let value = serde_json::to_value(&self.inner.event)
             .map_err(|e| signed_err(provedex_core::SignedError::Json(e)))?;
-        let obj = pythonize::pythonize(py, &value)
-            .map_err(|e| crate::errors::SigningError::new_err(e.to_string()))?;
-        Ok(obj.into())
+        pythonize::pythonize(py, &value)
+            .map_err(|e| crate::errors::SigningError::new_err(e.to_string()))
     }
 
     #[getter]
