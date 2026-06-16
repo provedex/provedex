@@ -22,10 +22,11 @@ Provedex is the primitive underneath. Sign locally, chain locally, verify offlin
 | `provedex-core` | signing primitives, hash chain, NDJSON ledger, export bundle | shipped |
 | `provedex-cli` | `provedex` command-line tool: verify, replay, export | shipped |
 | `provedex-agent` | localhost HTTP signing daemon for non-Rust customers (default integration) | shipped |
+| `provedex` (Python) | Native PyO3 binding: in-process Ed25519 signing, byte-identical to the Rust core, no sidecar. PyPI. See [`bindings/python/provedex/`](bindings/python/provedex/README.md). | shipped |
 | `provedex-pipecat` (Python) | Pipecat `FrameProcessor` that signs every frame through the sidecar. PyPI. See [`bindings/python/provedex-pipecat/`](bindings/python/provedex-pipecat/README.md). | shipped |
 | `provedex-langchain` (Python) | LangChain `CallbackHandler` that signs every LLM and tool call via the sidecar. Covers LangGraph by inheritance. PyPI. See [`bindings/python/provedex-langchain/`](bindings/python/provedex-langchain/README.md). | shipped |
 
-Framework adapters that wrap the sidecar are the integration layer. Native FFI bindings (PyO3 / napi-rs) are a future optional fast-path; the sidecar covers every other language via localhost HTTP. See ADR 0004.
+Framework adapters wrap the sidecar; that is the default integration layer. The native FFI binding (`provedex`, PyO3) is the opt-in in-process fast-path for Python (a napi-rs binding for Node is planned). The sidecar covers every other language via localhost HTTP. See ADR 0004.
 
 The reference voice-agent integration (whisper.cpp + Ollama + Piper) lives in its own repo at [provedex/demo-voice](https://github.com/provedex/demo-voice). It dogfoods this SDK against the published `v0.1.0` tag.
 
@@ -62,11 +63,12 @@ See [`deploy/`](deploy/) for ready-to-adapt manifests.
 ### Python bindings (PyPI)
 
 ```bash
-pip install provedex-pipecat      # Pipecat voice agents
-pip install provedex-langchain    # LangChain + LangGraph
+pip install provedex              # native PyO3 binding: in-process signing, no sidecar
+pip install provedex-pipecat      # Pipecat voice agents (via sidecar)
+pip install provedex-langchain    # LangChain + LangGraph (via sidecar)
 ```
 
-Both packages POST to the local `provedex-agent` sidecar. Run the agent first, then wire the binding into your pipeline. See the per-package READMEs for a five-line quickstart.
+`provedex` links the Rust core directly and signs in-process; it needs no agent. The wheels are pre-built (cpython 3.11+ on Linux x86_64/aarch64 and macOS arm64), so the install needs no Rust toolchain. `provedex-pipecat` and `provedex-langchain` instead POST to the local `provedex-agent` sidecar: run the agent first, then wire the adapter into your pipeline. See the per-package READMEs for a five-line quickstart.
 
 ## Quickstart - sidecar
 
