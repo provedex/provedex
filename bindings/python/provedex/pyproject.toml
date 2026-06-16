@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "provedex"
-version = "0.1.0"
+version = "0.1.1"
 description = "Native Python SDK for Provedex: Ed25519-signed, hash-chained agent evidence, byte-identical to the Rust reference."
 readme = "README.md"
 requires-python = ">=3.11"
