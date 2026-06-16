@@ -96,8 +96,13 @@ impl LedgerSession {
     /// assert_eq!(signed.seq, 0);
     /// ```
     pub fn seal_and_append(&self, event: AgentEvent) -> Result<SignedEvent, SessionError> {
-        let seq = self.seq.fetch_add(1, Ordering::SeqCst);
+        // Allocate seq INSIDE the parent_hash lock so seq allocation, sealing
+        // against the current parent, append, and parent advance are one atomic
+        // unit. If seq were taken before the lock, two concurrent callers could
+        // grab seq N and N+1 but acquire the lock in the opposite order, sealing
+        // N+1 against the parent of N-1 and breaking the chain.
         let mut parent = self.parent_hash.lock().expect("parent_hash mutex poisoned");
+        let seq = self.seq.fetch_add(1, Ordering::SeqCst);
         let signed = SignedEvent::seal(seq, event, &parent, &self.keypair)?;
         self.ledger.append(&signed)?;
         *parent = signed.self_hash.clone();
@@ -170,5 +175,38 @@ mod tests {
         assert_eq!(pk.len(), 64);
         let signed = s.seal_and_append(evt(0)).unwrap();
         assert_eq!(signed.signer_pubkey, pk);
+    }
+
+    #[test]
+    fn concurrent_seal_and_append_keeps_chain_valid() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let dir = tempdir().unwrap();
+        let session = Arc::new(fixture(dir.path()));
+        let threads = 8;
+        let per_thread = 25;
+
+        let handles: Vec<_> = (0..threads)
+            .map(|t| {
+                let s = Arc::clone(&session);
+                thread::spawn(move || {
+                    for i in 0..per_thread {
+                        s.seal_and_append(evt(t * per_thread + i)).unwrap();
+                    }
+                })
+            })
+            .collect();
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        // The chain must verify despite concurrent writers: seq dense from 0,
+        // every parent_hash links, every signature checks.
+        let events = session.ledger().read_all().unwrap();
+        assert_eq!(events.len() as u64, threads * per_thread);
+        let report = crate::chain::verify_chain(&events);
+        assert_eq!(report.status, crate::chain::ChainStatus::Valid);
+        assert_eq!(report.event_count, threads * per_thread);
     }
 }
