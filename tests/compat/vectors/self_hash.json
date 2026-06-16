@@ -1,0 +1,51 @@
+[
+  {
+    "name": "session_started",
+    "seq": 0,
+    "timestamp_nanos": 1700000000000000000,
+    "event": {
+      "type": "SessionStarted",
+      "payload": {
+        "agent_id": "agent-1",
+        "model_id": "llama3.2:3b",
+        "session_id": "sess-1"
+      }
+    },
+    "parent_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "self_hash": "8d53df10e56a2d677f4f0296d1ff4d3438a2fd0cd224b892d459785332ca7cbb"
+  },
+  {
+    "name": "model_invoked",
+    "seq": 1,
+    "timestamp_nanos": 1700000000000000001,
+    "event": {
+      "type": "ModelInvoked",
+      "payload": {
+        "model_id": "gpt-4o",
+        "prompt_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "response_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "prompt_tokens": 12,
+        "response_tokens": 34
+      }
+    },
+    "parent_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "self_hash": "c2554dcebe5fc49a5c11e0f39a65cd65f5d91034ef03c4f1f3aa3392569d044a"
+  },
+  {
+    "name": "tool_called_non_ascii",
+    "seq": 2,
+    "timestamp_nanos": 1700000000000000002,
+    "event": {
+      "type": "ToolCalled",
+      "payload": {
+        "tool_name": "search",
+        "args_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "args_redacted": {
+          "q": "café ✅"
+        }
+      }
+    },
+    "parent_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "self_hash": "909497af4806536db65bd226d018d5fd0f9d9be5a983b4d27b83d2ac91f7eb4f"
+  }
+]
