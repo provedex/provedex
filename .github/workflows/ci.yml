@@ -83,6 +83,12 @@ jobs:
       - name: cargo audit
         run: cargo audit
 
+      # The native python binding is a separate cargo workspace with its own
+      # Cargo.lock (pyo3, pythonize). Scan it too, so binding-only advisories
+      # are caught here and not just against the workspace lock.
+      - name: cargo audit (native python binding)
+        run: cargo audit --file bindings/python/provedex/Cargo.lock
+
       # cargo-deny enforces licenses, banned crates, multiple versions, source policy.
       - name: install cargo-deny
         run: cargo install --locked cargo-deny || echo "already installed"
