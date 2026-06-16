@@ -10,6 +10,7 @@ mod events;
 mod keypair;
 mod session;
 mod signed;
+mod verify;
 
 #[pymodule]
 fn _provedex(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -19,5 +20,6 @@ fn _provedex(m: &Bound<'_, PyModule>) -> PyResult<()> {
     events::build(m)?;
     signed::register(m)?;
     session::register(m)?;
+    verify::register(m)?;
     Ok(())
 }

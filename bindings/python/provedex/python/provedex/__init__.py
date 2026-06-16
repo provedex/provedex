@@ -7,6 +7,7 @@ Rust reference. See https://github.com/provedex/provedex.
 from ._provedex import (
     GENESIS_PARENT_HASH,
     ChainError,
+    ChainReport,
     KeyLoadError,
     LedgerError,
     ProvedexError,
@@ -18,11 +19,14 @@ from ._provedex import (
     compute_self_hash,
     events,
     sign_event,
+    verify_chain,
+    verify_file,
 )
 
 __all__ = [
     "GENESIS_PARENT_HASH",
     "ChainError",
+    "ChainReport",
     "KeyLoadError",
     "LedgerError",
     "ProvedexError",
@@ -34,4 +38,6 @@ __all__ = [
     "compute_self_hash",
     "events",
     "sign_event",
+    "verify_chain",
+    "verify_file",
 ]
